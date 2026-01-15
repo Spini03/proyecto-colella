@@ -84,7 +84,7 @@ export function Header() {
             Sobre Mí
           </button>
           <Button 
-            variant="secondary" 
+            variant="default" 
             size="sm"
             onClick={() => scrollToSection('booking')}
             className="font-bold"
@@ -96,7 +96,7 @@ export function Header() {
         {/* Mobile menu could be added here later */}
         <div className="md:hidden">
           <Button 
-            variant="secondary" 
+            variant="default" 
             size="sm"
             onClick={() => scrollToSection('booking')}
           >
