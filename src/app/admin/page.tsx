@@ -48,7 +48,7 @@ export default async function AdminDashboard() {
                     <div className="flex items-center gap-3 ml-2">
                         <div className="h-2 w-2 rounded-full bg-teal-500" />
                         <h3 className="font-bold capitalize text-xl tracking-tight text-gray-800 dark:text-neutral-200">
-                            {format(parseISO(dateStr), 'EEEE d "de" MMMM', { locale: es })}
+                            {format(parseISO(dateStr), "EEEE d 'de' MMMM", { locale: es })}
                         </h3>
                     </div>
 

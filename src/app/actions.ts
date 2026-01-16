@@ -149,8 +149,24 @@ export async function bookAppointment(data: { name: string; phone: string; date:
         }
      })
      
-     // Calculate Deposit
+     // Re-calculate Deposit
      const depositAmount = config.price * (config.depositPercentage / 100);
+
+     // VERIFICATION: Check if slot is still free
+     // This prevents double booking if two users submit simultaneously
+     const existing = await prisma.appointment.findFirst({
+        where: {
+            datetime: new Date(date),
+            status: { not: 'CANCELLED' }
+        }
+     })
+
+     if (existing) {
+        return { 
+            success: false, 
+            error: 'Este horario ya ha sido reservado por otra persona. Por favor, selecciona un horario diferente.' 
+        }
+     }
 
      // Create Appointment (PENDING payment)
      const appointment = await prisma.appointment.create({
@@ -176,8 +192,8 @@ export async function bookAppointment(data: { name: string; phone: string; date:
             }
         ],
         payer: {
-            // email: session.user.email || 'unknown@email.com',
-            email: "email_falso_para_test@gmail.com",
+            email: session.user.email || 'unknown@email.com',
+            // email: "email_falso_para_test@gmail.com",
             name: name
         },
         external_reference: appointment.id,
