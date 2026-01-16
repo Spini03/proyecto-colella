@@ -176,7 +176,8 @@ export async function bookAppointment(data: { name: string; phone: string; date:
             }
         ],
         payer: {
-            email: session.user.email || 'unknown@email.com',
+            // email: session.user.email || 'unknown@email.com',
+            email: "email_falso_para_test@gmail.com",
             name: name
         },
         external_reference: appointment.id,

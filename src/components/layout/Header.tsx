@@ -8,14 +8,15 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useSession, signOut } from 'next-auth/react'
 
+import { usePathname } from 'next/navigation'
+
 export function Header() {
+  const pathname = usePathname()
   const { data: session } = useSession()
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { scrollY } = useScroll()
-
-  const isAdmin = session?.user?.role === 'ADMIN'
-
+  /* Hook Call Order Must Be Preserved (Moved useEffect up) */
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20)
@@ -23,6 +24,14 @@ export function Header() {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  // Calculate this before potential early return (though hooks must be first regardless)
+  const isAdmin = session?.user?.role === 'ADMIN'
+
+  // Ocultar el header en el panel de administrador
+  // This must be AFTER all hook calls
+  if (pathname?.startsWith('/admin')) return null
+
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id)
@@ -85,11 +94,10 @@ export function Header() {
              </button>
           )}
           {isAdmin && (
-             <Link 
-               href="/admin"
-               className="text-sm font-bold text-[var(--color-brand-primary)] animate-pulse"
-             >
-               Panel Admin
+             <Link href="/admin">
+               <Button variant="ghost" size="sm" className="text-sm font-bold text-gray-500 hover:text-[var(--color-brand-primary)] hover:bg-[var(--color-brand-accent)] transition-colors">
+                 Panel Admin
+               </Button>
              </Link>
           )}
           <button 

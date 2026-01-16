@@ -5,6 +5,8 @@ import { updateGlobalSettings, updateWorkSchedule, addAvailabilityOverride, dele
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { format, parseISO } from 'date-fns'
+import { cn } from '@/lib/utils'
+
 
 type Settings = {
     currentPrice: number
@@ -146,33 +148,45 @@ export function SettingsManager({
                 </div>
                 <div className="space-y-4">
                     {DAYS.map((dayName, idx) => (
-                        <div key={idx} className={`flex items-center gap-4 p-3 rounded-lg border ${schedule[idx].isActive ? 'bg-white dark:bg-neutral-800 border-gray-200 dark:border-neutral-700' : 'bg-gray-50 dark:bg-neutral-900 border-transparent opacity-75'}`}>
-                            <div className="w-32 flex items-center gap-2">
-                                <input 
-                                    type="checkbox"
-                                    className="h-4 w-4 rounded border-gray-300"
-                                    checked={schedule[idx].isActive}
-                                    onChange={(e) => handleScheduleChange(idx, 'isActive', e.target.checked)}
-                                />
-                                <span className="font-medium">{dayName}</span>
+                        <div key={idx} className={`flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 rounded-xl border transition-colors ${schedule[idx].isActive ? 'bg-white dark:bg-neutral-800 border-gray-200 dark:border-neutral-700 shadow-sm' : 'bg-gray-50 dark:bg-neutral-900 border-transparent opacity-60'}`}>
+                            <div className="flex items-center gap-3 min-w-[140px]">
+                                <div className="relative flex items-center">
+                                    <input 
+                                        type="checkbox"
+                                        className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-gray-300 bg-white checked:bg-teal-600 checked:border-teal-600 focus:ring-2 focus:ring-teal-500/20 transition-all dark:border-neutral-600 dark:bg-neutral-800"
+                                        checked={schedule[idx].isActive}
+                                        onChange={(e) => handleScheduleChange(idx, 'isActive', e.target.checked)}
+                                    />
+                                    <span className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 peer-checked:opacity-100">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                        </svg>
+                                    </span>
+                                </div>
+                                <span className={cn("font-bold text-base", schedule[idx].isActive ? "text-gray-900 dark:text-white" : "text-gray-500")}>{dayName}</span>
                             </div>
-                            <div className="flex items-center gap-2 flex-1">
-                                <input 
-                                    type="time" 
-                                    className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                                    value={schedule[idx].startTime}
-                                    onChange={(e) => handleScheduleChange(idx, 'startTime', e.target.value)}
-                                    disabled={!schedule[idx].isActive}
-                                />
-                                <span>a</span>
-                                <input 
-                                    type="time" 
-                                    className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                                    value={schedule[idx].endTime}
-                                    onChange={(e) => handleScheduleChange(idx, 'endTime', e.target.value)}
-                                    disabled={!schedule[idx].isActive}
-                                />
-                            </div>
+                            
+                            {schedule[idx].isActive && (
+                                <div className="flex items-center gap-3 flex-1 w-full sm:w-auto pl-8 sm:pl-0 animate-in fade-in slide-in-from-left-2 duration-300">
+                                    <div className="relative flex-1 sm:flex-none">
+                                        <input 
+                                            type="time" 
+                                            className="h-10 w-full sm:w-32 rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/20 focus-visible:border-teal-500 transition-all dark:bg-neutral-900 dark:border-neutral-700"
+                                            value={schedule[idx].startTime}
+                                            onChange={(e) => handleScheduleChange(idx, 'startTime', e.target.value)}
+                                        />
+                                    </div>
+                                    <span className="text-gray-400 font-medium">a</span>
+                                    <div className="relative flex-1 sm:flex-none">
+                                        <input 
+                                            type="time" 
+                                            className="h-10 w-full sm:w-32 rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/20 focus-visible:border-teal-500 transition-all dark:bg-neutral-900 dark:border-neutral-700"
+                                            value={schedule[idx].endTime}
+                                            onChange={(e) => handleScheduleChange(idx, 'endTime', e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>
