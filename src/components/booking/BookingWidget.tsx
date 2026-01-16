@@ -120,7 +120,7 @@ export function BookingWidget() {
         <div className="bg-[#f8f9fa] dark:bg-neutral-900/50 border border-gray-100 dark:border-neutral-800 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[600px] backdrop-blur-sm">
           
           {/* Left Column: Calendar */}
-          <div className="w-full md:w-1/2 p-8 md:p-12 border-b md:border-b-0 md:border-r border-gray-100 dark:border-neutral-800 bg-white/50 dark:bg-black/20">
+          <div className="w-full md:w-1/2 p-4 md:p-12 border-b md:border-b-0 md:border-r border-gray-100 dark:border-neutral-800 bg-white/50 dark:bg-black/20">
             <div className="flex flex-col">
               <header className="flex justify-between items-center mb-8">
                 <div className="flex items-center gap-3">
@@ -171,7 +171,7 @@ export function BookingWidget() {
           </div>
 
           {/* Right Column: Dynamic Content */}
-          <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col bg-white/30 dark:bg-white/5">
+          <div className="w-full md:w-1/2 p-4 md:p-12 flex flex-col bg-white/30 dark:bg-white/5">
              <AnimatePresence mode="wait">
                 {step === 'date' && (
                    <motion.div 

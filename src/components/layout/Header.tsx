@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { scrollY } = useScroll()
   
   // Alternative to state if we want purely motion-based opacity
@@ -26,6 +27,7 @@ export function Header() {
     const element = document.getElementById(id)
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' })
+      setMobileMenuOpen(false)
     }
   }
 
@@ -33,8 +35,8 @@ export function Header() {
     <motion.header
       className={cn(
         'fixed top-0 z-50 w-full transition-all duration-300 px-4 md:px-8 py-3',
-        isScrolled 
-          ? 'bg-white/80 backdrop-blur-md shadow-sm dark:bg-[var(--color-brand-dark)]/80' 
+        isScrolled || mobileMenuOpen
+          ? 'bg-white/95 backdrop-blur-md shadow-sm dark:bg-[var(--color-brand-dark)]/90' 
           : 'bg-transparent'
       )}
       initial={{ y: -100 }}
@@ -45,11 +47,12 @@ export function Header() {
         {/* Logo */}
         <Link 
           href="/" 
-          className="flex items-center gap-3 group"
+          className="flex items-center gap-3 group relative z-50"
           onClick={(e) => {
             if (window.location.pathname === '/') {
               e.preventDefault();
               window.scrollTo({ top: 0, behavior: 'smooth' });
+              setMobileMenuOpen(false);
             }
           }}
         >
@@ -63,13 +66,14 @@ export function Header() {
           </div>
           <span className={cn(
             "text-xl font-bold tracking-tight font-display transition-colors",
-            "text-[var(--color-primary)]"
+            "text-[var(--color-primary)]",
+             mobileMenuOpen ? "text-gray-900 dark:text-white" : ""
           )}>
             Federico Colella
           </span>
         </Link>
 
-        {/* Navigation */}
+        {/* Desktop Navigation */}
         <nav className="hidden items-center gap-8 md:flex">
           <button 
             onClick={() => scrollToSection('methodology')}
@@ -93,17 +97,75 @@ export function Header() {
           </Button>
         </nav>
 
-        {/* Mobile menu could be added here later */}
-        <div className="md:hidden">
-          <Button 
+        {/* Mobile Menu Toggle */}
+        <div className="md:hidden flex items-center gap-4 z-50">
+           <Button 
             variant="default" 
             size="sm"
             onClick={() => scrollToSection('booking')}
+            className={cn("font-bold text-xs px-4 h-9", mobileMenuOpen ? "hidden" : "flex")}
           >
             Reservar
           </Button>
+          <button 
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2 text-gray-700 dark:text-gray-200"
+          >
+             {mobileMenuOpen ? (
+                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 18 12"/></svg>
+             ) : (
+                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+             )}
+          </button>
         </div>
       </div>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+             initial={{ opacity: 0, height: 0 }}
+             animate={{ opacity: 1, height: '100vh' }}
+             exit={{ opacity: 0, height: 0 }}
+             className="fixed inset-0 top-0 left-0 w-full bg-white dark:bg-neutral-900 z-40 flex flex-col pt-28 px-6"
+          >
+             <nav className="flex flex-col gap-8 text-2xl font-bold font-display text-gray-800 dark:text-gray-100">
+                <motion.button 
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                  onClick={() => scrollToSection('methodology')}
+                  className="text-left border-b border-gray-100 dark:border-neutral-800 pb-4"
+                >
+                  La Metodología
+                </motion.button>
+                <motion.button 
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  onClick={() => scrollToSection('about')}
+                  className="text-left border-b border-gray-100 dark:border-neutral-800 pb-4"
+                >
+                  Sobre Mí
+                </motion.button>
+                <motion.div 
+                   initial={{ x: -20, opacity: 0 }}
+                   animate={{ x: 0, opacity: 1 }}
+                   transition={{ delay: 0.3 }}
+                   className="pt-4"
+                >
+                   <Button 
+                    size="lg"
+                    className="w-full text-lg h-14"
+                    onClick={() => scrollToSection('booking')}
+                  >
+                    Agendá tu Sesión
+                  </Button>
+                </motion.div>
+             </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.header>
   )
 }
