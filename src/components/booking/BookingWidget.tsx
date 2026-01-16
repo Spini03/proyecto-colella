@@ -27,20 +27,28 @@ export function BookingWidget() {
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null)
 
   // Restore state from URL if returning from Auth
+  // Restore state from URL if returning from Auth
   useEffect(() => {
     const dateParam = searchParams.get('date')
     const slotParam = searchParams.get('slot')
     
     if (dateParam && slotParam && status === 'authenticated') {
         const date = parseISO(dateParam)
-        // Ensure we don't overwrite if already set (e.g. by store hydration if any)
-        if (!selectedDate || selectedDate.toISOString() !== date.toISOString()) {
+        
+        // Only update if different to avoid loops (though dependency fix helps more)
+        if (!selectedDate || selectedDate.getTime() !== date.getTime()) {
             setDate(date)
             setSlot(slotParam)
             setStep('details')
+            
+            // Clear URL params to prevent "locking" the date selection
+            // Using window.history.replaceState to avoid a full router refresh/flicker
+            window.history.replaceState({}, '', window.location.pathname)
         }
     }
-  }, [searchParams, status, setDate, setSlot, setStep, selectedDate])
+    // Removing selectedDate from dependencies is crucial here to prevent the loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, status, setDate, setSlot, setStep])
 
   useEffect(() => {
     if (selectedDate) {

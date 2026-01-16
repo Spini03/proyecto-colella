@@ -2,6 +2,8 @@
 
 import { prisma } from '@/lib/prisma'
 import { BUSINESS_RULES } from '@/lib/config/business-rules'
+import { preference } from '@/lib/mercadopago'
+
 import { addDays, setHours, setMinutes, startOfDay, endOfDay, isBefore, addMinutes, format, parseISO } from 'date-fns'
 
 export async function getAvailability(dateStr: string) {
@@ -39,12 +41,8 @@ export async function bookAppointment(data: { name: string; phone: string; date:
   const { name, phone, date } = data
   const userId = session.user.id
 
-  // Validate business rules (e.g. 24h notice)
-  // const bookingDate = parseISO(date)
-  // if (differenceInHours(bookingDate, new Date()) < BUSINESS_RULES.CANCELLATION_MIN_HOURS) ...
-
   try {
-     // Update user profile with latest details provided
+     // Update user profile
      await prisma.user.update({
         where: { id: userId },
         data: {
@@ -53,23 +51,70 @@ export async function bookAppointment(data: { name: string; phone: string; date:
         }
      })
      
-     // Create Appointment
-     await prisma.appointment.create({
+     // Calculate Deposit
+     let depositAmount = 0;
+     if (BUSINESS_RULES.DEPOSIT_TYPE === 'PERCENTAGE') {
+        depositAmount = BUSINESS_RULES.SERVICE_PRICE * (BUSINESS_RULES.DEPOSIT_PERCENTAGE / 100);
+     } else {
+        // Fallback or Fixed logic if added later
+        depositAmount = BUSINESS_RULES.SERVICE_PRICE; 
+     }
+
+     // Create Appointment (PENDING payment)
+     const appointment = await prisma.appointment.create({
         data: {
             datetime: new Date(date),
             status: 'PENDING',
-            patientId: userId
+            patientId: userId,
+            depositPaid: false
         }
      })
      
-     console.log('Booking confirmed for:', name, phone, date)
+     // Create Mercado Pago Preference
+     // Priority: Defined APP_URL -> NEXT_PUBLIC -> AUTH_URL -> localhost
+     const appUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || process.env.AUTH_URL || 'http://localhost:3000';
+     
+     const preferenceBody = {
+        items: [
+            {
+                id: 'deposit',
+                title: `Deposit: Kinesiology Session`, // customizable
+                quantity: 1,
+                unit_price: depositAmount,
+                currency_id: 'ARS',
+            }
+        ],
+        payer: {
+            email: session.user.email || 'unknown@email.com',
+            name: name
+        },
+        external_reference: appointment.id, // CRITICAL: Link to DB
+        back_urls: {
+            success: `${appUrl}/booking/success`,
+            failure: `${appUrl}/booking/failure`,
+            pending: `${appUrl}/booking/pending`
+        },
+        // auto_return: 'approved',
+        notification_url: `${appUrl}/api/webhooks/mercadopago`, // Must be public https in prod (e.g. via ngrok for dev)
+        metadata: {
+            appointment_id: appointment.id
+        }
+     };
+
+     const preferenceResponse = await preference.create({
+        body: preferenceBody
+     });
+
+     if (!preferenceResponse.init_point) {
+        throw new Error('Failed to create payment preference');
+     }
      
      return { 
        success: true, 
-       paymentUrl: 'https://link.mercadopago.com.ar/mock-payment' 
+       paymentUrl: preferenceResponse.init_point 
      }
   } catch (error) {
-      console.error(error)
-      return { success: false, error: 'Booking failed' }
+      console.error('Book Appointment Error:', error)
+      return { success: false, error: 'Booking failed. Please try again.' }
   }
 }
