@@ -12,8 +12,10 @@ import { useSearchParams } from "next/navigation"
 import { Button } from '@/components/ui/button'
 import { useBookingStore } from '@/lib/store/booking-store'
 import { getAvailability, bookAppointment } from '@/app/actions'
+import { getPublicConfig } from '@/app/public-config' // New action
 import { cn } from '@/lib/utils'
-import { BUSINESS_RULES } from '@/lib/config/business-rules'
+import { PhoneInput } from '@/components/ui/phone-input'
+import { isValidPhoneNumber, type Value } from 'react-phone-number-input'
 
 import 'react-day-picker/dist/style.css'
 
@@ -26,8 +28,15 @@ export function BookingWidget() {
   const [slots, setSlots] = useState<string[]>([])
   const [bookingStatus, setBookingStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null)
+  const [phoneNumber, setPhoneNumber] = useState<Value>()
+  
+  // Dynamic Config State
+  const [config, setConfig] = useState<{ price: number, duration: number, depositPercentage: number } | null>(null)
 
-  // Restore state from URL if returning from Auth
+  useEffect(() => {
+      getPublicConfig().then(setConfig)
+  }, [])
+
   // Restore state from URL if returning from Auth
   useEffect(() => {
     const dateParam = searchParams.get('date')
@@ -47,9 +56,13 @@ export function BookingWidget() {
             window.history.replaceState({}, '', window.location.pathname)
         }
     }
-    // Removing selectedDate from dependencies is crucial here to prevent the loop
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, status, setDate, setSlot, setStep])
+  }, [searchParams, status, setDate, setSlot, setStep, selectedDate]) // Added selectedDate to dep array to satisfy linter but added logic check inside
+
+  useEffect(() => {
+    if (session?.user?.phoneNumber && !phoneNumber) {
+      setPhoneNumber(session.user.phoneNumber as Value)
+    }
+  }, [session, phoneNumber])
 
   useEffect(() => {
     if (selectedDate) {
@@ -87,9 +100,15 @@ export function BookingWidget() {
     setBookingStatus('loading')
     const formData = new FormData(e.currentTarget)
     
+    // Validate phone number
+    if (phoneNumber && !isValidPhoneNumber(phoneNumber)) {
+        setBookingStatus('error')
+        return
+    }
+
     const data = {
         name: formData.get('name') as string,
-        phone: formData.get('phone') as string,
+        phone: phoneNumber || (formData.get('phone') as string),
         date: selectedSlot
     }
 
@@ -107,6 +126,9 @@ export function BookingWidget() {
     }
   }
 
+  // Show loading state if config not ready
+  if (!config) return <div className="py-24 flex justify-center"><Loader2 className="animate-spin" /></div>
+
   return (
     <section id="booking" className="py-24 bg-white dark:bg-[#0a0a0a]">
       <div className="container mx-auto px-4 max-w-6xl">
@@ -120,7 +142,7 @@ export function BookingWidget() {
         <div className="bg-[#f8f9fa] dark:bg-neutral-900/50 border border-gray-100 dark:border-neutral-800 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[600px] backdrop-blur-sm">
           
           {/* Left Column: Calendar */}
-          <div className="w-full md:w-1/2 p-4 md:p-12 border-b md:border-b-0 md:border-r border-gray-100 dark:border-neutral-800 bg-white/50 dark:bg-black/20">
+          <div className="w-full md:w-1/2 p-4 md:p-12 border-b md:border-b-0 md:border-r border-gray-100 dark:border-neutral-800 bg-white/50 dark:bg-white/5">
             <div className="flex flex-col">
               <header className="flex justify-between items-center mb-8">
                 <div className="flex items-center gap-3">
@@ -141,7 +163,7 @@ export function BookingWidget() {
                   disabled={{ before: startOfToday() }}
                   locale={es}
                   classNames={{
-                    month: 'w-full space-y-6 relative',
+                    month: 'space-y-6',
                     month_caption: 'flex justify-center mb-10 text-lg font-bold capitalize h-8 items-center w-full',
                     nav: 'flex items-center gap-1.5 absolute right-0 top-0 h-8 z-10',
                     button_previous: cn(
@@ -150,7 +172,7 @@ export function BookingWidget() {
                     button_next: cn(
                       "h-7 w-7 bg-transparent p-0 transition-all hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-lg flex items-center justify-center border border-gray-100 dark:border-neutral-800 text-gray-500 dark:text-gray-400 relative z-20 cursor-pointer"
                     ),
-                    month_grid: 'w-full border-collapse',
+                    month_grid: 'border-collapse',
                     weekdays: 'flex justify-between mb-4',
                     weekday: 'text-gray-400 dark:text-neutral-500 w-10 font-bold text-[0.7rem] uppercase tracking-widest text-center',
                     weeks: 'space-y-1',
@@ -164,14 +186,13 @@ export function BookingWidget() {
                     outside: 'text-gray-300 dark:text-neutral-700 opacity-50',
                     disabled: 'text-gray-200 dark:text-neutral-800 cursor-not-allowed opacity-30',
                   }}
-                  style={{ position: 'relative', width: '100%' }}
                 />
               </div>
             </div>
           </div>
 
           {/* Right Column: Dynamic Content */}
-          <div className="w-full md:w-1/2 p-4 md:p-12 flex flex-col bg-white/30 dark:bg-white/5">
+          <div className="w-full md:w-1/2 p-4 md:p-12 flex flex-col bg-white/50 dark:bg-white/5">
              <AnimatePresence mode="wait">
                 {step === 'date' && (
                    <motion.div 
@@ -243,10 +264,10 @@ export function BookingWidget() {
                                 <div className="mt-auto pt-4 p-4 rounded-[1.5rem] bg-teal-500/5 border border-teal-500/10 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <div className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
-                                        <span className="text-xs font-bold text-teal-700 dark:text-teal-400 uppercase tracking-wider">Sesión de {BUSINESS_RULES.SESSION_DURATION_MINUTES} min</span>
+                                        <span className="text-xs font-bold text-teal-700 dark:text-teal-400 uppercase tracking-wider">Sesión de {config.duration} min</span>
                                     </div>
                                     <span className="text-sm font-black text-gray-800 dark:text-gray-100">
-                                        ${BUSINESS_RULES.SERVICE_PRICE.toLocaleString('es-AR')}
+                                        ${config.price.toLocaleString('es-AR')}
                                     </span>
                                 </div>
                             </div>
@@ -298,13 +319,13 @@ export function BookingWidget() {
                              <div className="space-y-3">
                                  <label className="block text-xs font-black uppercase tracking-widest text-gray-400">WhatsApp</label>
                                  <div className="relative">
-                                   <input 
-                                     required 
-                                     name="phone" 
-                                     type="tel"
-                                     defaultValue={session?.user?.phoneNumber || ''}
-                                     className="w-full p-4 bg-white dark:bg-black/20 border border-gray-100 dark:border-neutral-800 rounded-2xl focus:ring-2 ring-[var(--color-brand-primary)] outline-none transition-all focus:shadow-lg"
-                                     placeholder="+54 9 11 1234 5678" 
+                                   <PhoneInput
+                                     name="phone"
+                                     value={phoneNumber}
+                                     onChange={setPhoneNumber}
+                                     required
+                                     placeholder="11 1234 5678"
+                                     className="bg-white dark:bg-black/20 border border-gray-100 dark:border-neutral-800 rounded-2xl focus-within:ring-2 ring-[var(--color-brand-primary)] transition-all focus-within:shadow-lg"
                                    />
                                  </div>
                              </div>
@@ -312,7 +333,7 @@ export function BookingWidget() {
                                  <div className="bg-gray-50 dark:bg-black/20 p-5 rounded-2xl border border-gray-100 dark:border-neutral-800 space-y-3">
                                      <div className="flex justify-between items-center">
                                          <span className="text-sm text-gray-500 font-medium">Valor de la sesión</span>
-                                         <span className="text-lg font-bold">${BUSINESS_RULES.SERVICE_PRICE.toLocaleString('es-AR')}</span>
+                                         <span className="text-lg font-bold">${config.price.toLocaleString('es-AR')}</span>
                                      </div>
                                      <div className="flex justify-between items-center">
                                          <div className="flex flex-col">
@@ -320,13 +341,13 @@ export function BookingWidget() {
                                              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Asegura tu lugar</span>
                                          </div>
                                          <span className="text-lg font-bold text-teal-600 dark:text-teal-400">
-                                            ${(BUSINESS_RULES.SERVICE_PRICE * (BUSINESS_RULES.DEPOSIT_PERCENTAGE / 100)).toLocaleString('es-AR')}
+                                            ${(config.price * (config.depositPercentage / 100)).toLocaleString('es-AR')}
                                          </span>
                                      </div>
                                      <div className="pt-3 border-t border-gray-200 dark:border-neutral-800/50 flex justify-between items-center">
                                          <span className="text-xs font-medium text-gray-400 italic">El saldo restante se abona el día de la sesión</span>
                                          <span className="text-xs font-bold text-gray-400">
-                                            ${(BUSINESS_RULES.SERVICE_PRICE * (1 - BUSINESS_RULES.DEPOSIT_PERCENTAGE / 100)).toLocaleString('es-AR')}
+                                            ${(config.price * (1 - config.depositPercentage / 100)).toLocaleString('es-AR')}
                                          </span>
                                      </div>
                                  </div>

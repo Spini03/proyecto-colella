@@ -35,6 +35,8 @@ model User {
   
   appointments  Appointment[]
   enrollments   Enrollment[]
+  
+  priceLogs     PriceLog[]
 }
 
 model Account {
@@ -109,6 +111,8 @@ model Course {
   enrollments Enrollment[]
 }
 
+
+
 model Enrollment {
   id        String   @id @default(cuid())
   userId    String
@@ -119,4 +123,49 @@ model Enrollment {
   course Course @relation(fields: [courseId], references: [id])
 
   @@unique([userId, courseId])
+}
+
+// --- CMS & Configuration Models ---
+
+model GlobalSettings {
+  id                String   @id @default("settings")
+  currentPrice      Decimal  @default(40000)
+  sessionDuration   Int      @default(30)
+  depositPercentage Int      @default(50)
+  updatedAt         DateTime @updatedAt
+}
+
+model PriceLog {
+  id        String   @id @default(cuid())
+  price     Decimal
+  adminId   String
+  admin     User     @relation(fields: [adminId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model WorkSchedule {
+  id        String  @id @default(cuid())
+  dayOfWeek Int     @unique // 0=Sun, 1=Mon, ... 6=Sat
+  startTime String  // Format "HH:mm" (24h)
+  endTime   String  // Format "HH:mm" (24h)
+  isActive  Boolean @default(true)
+}
+
+model AvailabilityOverride {
+  id        String   @id @default(cuid())
+  date      DateTime @unique
+  startTime String   // Format "HH:mm"
+  endTime   String   // Format "HH:mm"
+  createdAt DateTime @default(now())
+}
+
+model SuccessStory {
+  id        String   @id @default(cuid())
+  name      String
+  role      String
+  imageUrl  String?
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
