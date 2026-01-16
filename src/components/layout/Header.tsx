@@ -6,14 +6,15 @@ import Link from 'next/link'
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useSession, signOut } from 'next-auth/react'
 
 export function Header() {
+  const { data: session } = useSession()
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { scrollY } = useScroll()
-  
-  // Alternative to state if we want purely motion-based opacity
-  // const opacity = useTransform(scrollY, [0, 50], [0, 1])
+
+  const isAdmin = session?.user?.role === 'ADMIN'
 
   useEffect(() => {
     const handleScroll = () => {
@@ -75,6 +76,22 @@ export function Header() {
 
         {/* Desktop Navigation */}
         <nav className="hidden items-center gap-8 md:flex">
+          {session && (
+             <button 
+               onClick={() => signOut()}
+               className="text-xs font-medium text-gray-400 hover:text-red-500 transition-colors"
+             >
+               Cerrar Sesión
+             </button>
+          )}
+          {isAdmin && (
+             <Link 
+               href="/admin"
+               className="text-sm font-bold text-[var(--color-brand-primary)] animate-pulse"
+             >
+               Panel Admin
+             </Link>
+          )}
           <button 
             onClick={() => scrollToSection('methodology')}
             className="text-sm font-medium text-[var(--color-primary)] hover:text-[var(--color-brand-primary)] transition-colors"
@@ -130,6 +147,15 @@ export function Header() {
              className="fixed inset-0 top-0 left-0 w-full bg-white dark:bg-neutral-900 z-40 flex flex-col pt-28 px-6"
           >
              <nav className="flex flex-col gap-8 text-2xl font-bold font-display text-gray-800 dark:text-gray-100">
+                {isAdmin && (
+                   <Link 
+                     href="/admin"
+                     onClick={() => setMobileMenuOpen(false)}
+                     className="text-left border-b border-gray-100 dark:border-neutral-800 pb-4 text-[var(--color-brand-primary)]"
+                   >
+                     Panel Admin
+                   </Link>
+                )}
                 <motion.button 
                   initial={{ x: -20, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
@@ -148,6 +174,17 @@ export function Header() {
                 >
                   Sobre Mí
                 </motion.button>
+                {session && (
+                   <button 
+                     onClick={() => {
+                       signOut();
+                       setMobileMenuOpen(false);
+                     }}
+                     className="text-left border-b border-gray-100 dark:border-neutral-800 pb-4 text-red-500"
+                   >
+                     Cerrar Sesión
+                   </button>
+                )}
                 <motion.div 
                    initial={{ x: -20, opacity: 0 }}
                    animate={{ x: 0, opacity: 1 }}
