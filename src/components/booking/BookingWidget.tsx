@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { DayPicker } from 'react-day-picker'
-import { format, startOfToday } from 'date-fns'
+import { format, startOfToday, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2, Calendar as CalendarIcon, Clock, User, CheckCircle2 } from 'lucide-react'
+import { useSession, signIn } from "next-auth/react"
+import { useSearchParams } from "next/navigation"
 
 import { Button } from '@/components/ui/button'
 import { useBookingStore } from '@/lib/store/booking-store'
@@ -15,11 +17,30 @@ import { cn } from '@/lib/utils'
 import 'react-day-picker/dist/style.css'
 
 export function BookingWidget() {
+  const { data: session, status } = useSession()
+  const searchParams = useSearchParams()
+  
   const { selectedDate, selectedSlot, step, setDate, setSlot, setStep } = useBookingStore()
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [slots, setSlots] = useState<string[]>([])
   const [bookingStatus, setBookingStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null)
+
+  // Restore state from URL if returning from Auth
+  useEffect(() => {
+    const dateParam = searchParams.get('date')
+    const slotParam = searchParams.get('slot')
+    
+    if (dateParam && slotParam && status === 'authenticated') {
+        const date = parseISO(dateParam)
+        // Ensure we don't overwrite if already set (e.g. by store hydration if any)
+        if (!selectedDate || selectedDate.toISOString() !== date.toISOString()) {
+            setDate(date)
+            setSlot(slotParam)
+            setStep('details')
+        }
+    }
+  }, [searchParams, status, setDate, setSlot, setStep, selectedDate])
 
   useEffect(() => {
     if (selectedDate) {
@@ -32,6 +53,23 @@ export function BookingWidget() {
         .catch(() => setLoadingSlots(false))
     }
   }, [selectedDate])
+
+  const handleSlotClick = (slot: string) => {
+    if (status === 'unauthenticated') {
+        // Trigger generic sign in, preserving state
+        const params = new URLSearchParams()
+        if (selectedDate) params.set('date', selectedDate.toISOString())
+        params.set('slot', slot)
+        
+        signIn('google', { 
+            callbackUrl: `${window.location.pathname}?${params.toString()}` 
+        })
+        return
+    }
+    
+    setSlot(slot)
+    setStep('details')
+  }
 
   const handleBooking = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -178,7 +216,7 @@ export function BookingWidget() {
                                 {slots.map(slot => (
                                     <button 
                                         key={slot} 
-                                        onClick={() => setSlot(slot)}
+                                        onClick={() => handleSlotClick(slot)}
                                         className={cn(
                                           "group relative p-5 rounded-2xl border transition-all duration-300 text-center",
                                           "border-gray-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm hover:shadow-md",
@@ -231,6 +269,7 @@ export function BookingWidget() {
                                    <input 
                                      required 
                                      name="name" 
+                                     defaultValue={session?.user?.name || ''}
                                      className="w-full p-4 bg-white dark:bg-black/20 border border-gray-100 dark:border-neutral-800 rounded-2xl focus:ring-2 ring-[var(--color-brand-primary)] outline-none transition-all focus:shadow-lg"
                                      placeholder="Juan Pérez" 
                                    />
@@ -242,7 +281,8 @@ export function BookingWidget() {
                                    <input 
                                      required 
                                      name="phone" 
-                                     type="tel" 
+                                     type="tel"
+                                     defaultValue={session?.user?.phoneNumber || ''}
                                      className="w-full p-4 bg-white dark:bg-black/20 border border-gray-100 dark:border-neutral-800 rounded-2xl focus:ring-2 ring-[var(--color-brand-primary)] outline-none transition-all focus:shadow-lg"
                                      placeholder="+54 9 11 1234 5678" 
                                    />
@@ -255,7 +295,7 @@ export function BookingWidget() {
                                  </Button>
                                  <Button type="submit" disabled={bookingStatus === 'loading'} className="flex-[2] h-14 rounded-2xl font-bold shadow-xl shadow-teal-500/20">
                                      {bookingStatus === 'loading' ? <Loader2 className="animate-spin mr-2" /> : null}
-                                     Siguiente
+                                     {session?.user?.phoneNumber ? 'Confirmar Reserva' : 'Guardar y Reservar'}
                                  </Button>
                              </div>
                              <p className="text-[10px] text-center text-gray-400/80 px-4 leading-relaxed italic">
@@ -292,11 +332,11 @@ export function BookingWidget() {
                               </Button>
                           )}
                            <Button variant="ghost" className="w-full text-gray-400 hover:text-gray-600 font-bold" onClick={() => {
-                              setDate(undefined);
-                              setSlot(null);
-                              setStep('date');
+                               setDate(undefined);
+                               setSlot(null);
+                               setStep('date');
                            }}>
-                              Empezar de nuevo
+                               Empezar de nuevo
                            </Button>
                         </div>
                     </motion.div>

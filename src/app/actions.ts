@@ -27,23 +27,42 @@ export async function getAvailability(dateStr: string) {
   return { slots }
 }
 
+import { auth } from '@/auth'
+
 export async function bookAppointment(data: { name: string; phone: string; date: string }) {
-  const { name, phone, date } = data
+  const session = await auth()
   
+  if (!session?.user?.id) {
+    return { success: false, error: 'Unauthorized' }
+  }
+
+  const { name, phone, date } = data
+  const userId = session.user.id
+
   // Validate business rules (e.g. 24h notice)
   // const bookingDate = parseISO(date)
   // if (differenceInHours(bookingDate, new Date()) < BUSINESS_RULES.CANCELLATION_MIN_HOURS) ...
 
-  // Transaction
   try {
-     // Check if user exists or create
-     // const user = await prisma.user.upsert(...)
+     // Update user profile with latest details provided
+     await prisma.user.update({
+        where: { id: userId },
+        data: {
+            phoneNumber: phone,
+            name: name
+        }
+     })
      
      // Create Appointment
-     // await prisma.appointment.create(...)
+     await prisma.appointment.create({
+        data: {
+            datetime: new Date(date),
+            status: 'PENDING',
+            patientId: userId
+        }
+     })
      
-     // For scaffolding without active DB connection, just return success
-     console.log('Booking for:', name, phone, date)
+     console.log('Booking confirmed for:', name, phone, date)
      
      return { 
        success: true, 

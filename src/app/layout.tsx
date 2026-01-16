@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import { Header } from "@/components/layout/Header";
+import { Providers } from "@/components/providers/Providers";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -19,8 +21,6 @@ export const metadata: Metadata = {
   description: "Kinesiología Deportiva de Alto Rendimiento. Recuperación de lesiones y optimización del movimiento.",
 };
 
-import { Header } from "@/components/layout/Header";
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -31,8 +31,10 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${jakarta.variable} antialiased`}
       >
-        <Header />
-        {children}
+        <Providers>
+            <Header />
+            {children}
+        </Providers>
       </body>
     </html>
   );
