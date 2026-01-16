@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { useBookingStore } from '@/lib/store/booking-store'
 import { getAvailability, bookAppointment } from '@/app/actions'
 import { cn } from '@/lib/utils'
+import { BUSINESS_RULES } from '@/lib/config/business-rules'
 
 import 'react-day-picker/dist/style.css'
 
@@ -220,23 +221,34 @@ export function BookingWidget() {
                                 <Button variant="outline" onClick={() => setDate(undefined)} className="rounded-xl">Ver otros días</Button>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 overflow-y-auto pr-2 max-h-[400px]">
-                                {slots.map(slot => (
-                                    <button 
-                                        key={slot} 
-                                        onClick={() => handleSlotClick(slot)}
-                                        className={cn(
-                                          "group relative p-5 rounded-2xl border transition-all duration-300 text-center",
-                                          "border-gray-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm hover:shadow-md",
-                                          "hover:border-[var(--color-brand-primary)] hover:bg-[var(--color-brand-accent)]"
-                                        )}
-                                    >
-                                        <span className="text-lg font-bold text-gray-700 dark:text-gray-200 group-hover:text-[var(--color-brand-primary)]">
-                                          {format(new Date(slot), 'HH:mm')}
-                                        </span>
-                                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[var(--color-brand-primary)] opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    </button>
-                                ))}
+                            <div className="flex flex-col gap-4 h-full">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 overflow-y-auto pr-2 max-h-[340px]">
+                                    {slots.map(slot => (
+                                        <button 
+                                            key={slot} 
+                                            onClick={() => handleSlotClick(slot)}
+                                            className={cn(
+                                              "group relative p-5 rounded-2xl border transition-all duration-300 text-center",
+                                              "border-gray-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm hover:shadow-md",
+                                              "hover:border-[var(--color-brand-primary)] hover:bg-[var(--color-brand-accent)]"
+                                            )}
+                                        >
+                                            <span className="text-lg font-bold text-gray-700 dark:text-gray-200 group-hover:text-[var(--color-brand-primary)]">
+                                              {format(new Date(slot), 'HH:mm')}
+                                            </span>
+                                            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[var(--color-brand-primary)] opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="mt-auto pt-4 p-4 rounded-[1.5rem] bg-teal-500/5 border border-teal-500/10 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
+                                        <span className="text-xs font-bold text-teal-700 dark:text-teal-400 uppercase tracking-wider">Sesión de {BUSINESS_RULES.SESSION_DURATION_MINUTES} min</span>
+                                    </div>
+                                    <span className="text-sm font-black text-gray-800 dark:text-gray-100">
+                                        ${BUSINESS_RULES.SERVICE_PRICE.toLocaleString('es-AR')}
+                                    </span>
+                                </div>
                             </div>
                         )}
                     </motion.div>
@@ -297,10 +309,32 @@ export function BookingWidget() {
                                  </div>
                              </div>
                              
-                             <div className="flex flex-col sm:flex-row gap-4 mt-6">
-                                 <Button type="button" variant="ghost" onClick={() => setStep('slot')} className="flex-1 h-14 rounded-2xl font-bold text-gray-500">
-                                     Atrás
-                                 </Button>
+                                 <div className="bg-gray-50 dark:bg-black/20 p-5 rounded-2xl border border-gray-100 dark:border-neutral-800 space-y-3">
+                                     <div className="flex justify-between items-center">
+                                         <span className="text-sm text-gray-500 font-medium">Valor de la sesión</span>
+                                         <span className="text-lg font-bold">${BUSINESS_RULES.SERVICE_PRICE.toLocaleString('es-AR')}</span>
+                                     </div>
+                                     <div className="flex justify-between items-center">
+                                         <div className="flex flex-col">
+                                             <span className="text-sm text-gray-500 font-medium">Seña (a pagar ahora)</span>
+                                             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Asegura tu lugar</span>
+                                         </div>
+                                         <span className="text-lg font-bold text-teal-600 dark:text-teal-400">
+                                            ${(BUSINESS_RULES.SERVICE_PRICE * (BUSINESS_RULES.DEPOSIT_PERCENTAGE / 100)).toLocaleString('es-AR')}
+                                         </span>
+                                     </div>
+                                     <div className="pt-3 border-t border-gray-200 dark:border-neutral-800/50 flex justify-between items-center">
+                                         <span className="text-xs font-medium text-gray-400 italic">El saldo restante se abona el día de la sesión</span>
+                                         <span className="text-xs font-bold text-gray-400">
+                                            ${(BUSINESS_RULES.SERVICE_PRICE * (1 - BUSINESS_RULES.DEPOSIT_PERCENTAGE / 100)).toLocaleString('es-AR')}
+                                         </span>
+                                     </div>
+                                 </div>
+
+                                 <div className="flex flex-col sm:flex-row gap-4 mt-2">
+                                     <Button type="button" variant="ghost" onClick={() => setStep('slot')} className="flex-1 h-14 rounded-2xl font-bold text-gray-500">
+                                         Atrás
+                                     </Button>
                                  <Button type="submit" disabled={bookingStatus === 'loading'} className="flex-[2] h-14 rounded-2xl font-bold shadow-xl shadow-teal-500/20">
                                      {bookingStatus === 'loading' ? <Loader2 className="animate-spin mr-2" /> : null}
                                      {session?.user?.phoneNumber ? 'Confirmar Reserva' : 'Guardar y Reservar'}

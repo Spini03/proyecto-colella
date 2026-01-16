@@ -4,26 +4,29 @@ import { prisma } from '@/lib/prisma'
 import { BUSINESS_RULES } from '@/lib/config/business-rules'
 import { preference } from '@/lib/mercadopago'
 
-import { addDays, setHours, setMinutes, startOfDay, endOfDay, isBefore, addMinutes, format, parseISO } from 'date-fns'
+import { addDays, setHours, setMinutes, startOfDay, endOfDay, isBefore, addMinutes, format, parseISO, getDay } from 'date-fns'
 
 export async function getAvailability(dateStr: string) {
-  // In a real scenario, we would query the database for existing appointments
-  // const appointments = await prisma.appointment.findMany(...)
-  // const blockouts = await prisma.blockoutDate.findMany(...)
-  
-  // For now, simpler logic to scaffold the frontend
   const date = parseISO(dateStr)
-  const start = setHours(date, 9) // 9 AM
-  const end = setHours(date, 18) // 6 PM
+  const dayOfWeek = getDay(date)
+  
+  const schedule = BUSINESS_RULES.WORKING_HOURS[dayOfWeek]
+
+  if (!schedule) {
+    return { slots: [] }
+  }
+
+  // Set start and end times based on business rules
+  // Ensure we start at the top of the hour
+  const start = setMinutes(setHours(date, schedule.start), 0)
+  const end = setMinutes(setHours(date, schedule.end), 0)
   
   const slots = []
   let current = start
   
   while (isBefore(current, end)) {
-    // Basic logic: if it's in the past, don't show?
-    // for scaffolding, just return slots
     slots.push(current.toISOString())
-    current = addMinutes(current, 60) // 1 hour slots
+    current = addMinutes(current, BUSINESS_RULES.SESSION_DURATION_MINUTES)
   }
   
   return { slots }
