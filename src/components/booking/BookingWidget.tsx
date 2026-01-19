@@ -311,7 +311,7 @@ export function BookingWidget() {
                                      required 
                                      name="name" 
                                      defaultValue={session?.user?.name || ''}
-                                     className="w-full p-4 bg-white dark:bg-black/20 border border-gray-100 dark:border-neutral-800 rounded-2xl focus:ring-2 ring-[var(--color-brand-primary)] outline-none transition-all focus:shadow-lg"
+                                     className="w-full p-4 bg-white dark:bg-black/20 border border-gray-100 dark:border-neutral-800 rounded-2xl focus:ring-2 ring-[var(--color-brand-primary)] focus:bg-transparent dark:focus:bg-black/40 outline-none transition-all focus:shadow-lg"
                                      placeholder="Juan Pérez" 
                                    />
                                  </div>

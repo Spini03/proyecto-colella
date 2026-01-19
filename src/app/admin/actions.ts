@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
+// Refreshing Prisma instance
 import { auth } from '@/auth'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
@@ -67,7 +68,7 @@ export async function getSuccessStories() {
     })
 }
 
-export async function upsertSuccessStory(data: { id?: string, name: string, role: string, imageUrl?: string, isActive: boolean }) {
+export async function upsertSuccessStory(data: { id?: string, name: string, role: string, description?: string, imageUrl?: string, isActive: boolean }) {
     await requireAdmin()
     
     if (data.id) {
@@ -76,6 +77,7 @@ export async function upsertSuccessStory(data: { id?: string, name: string, role
             data: {
                 name: data.name,
                 role: data.role,
+                description: data.description,
                 imageUrl: data.imageUrl,
                 isActive: data.isActive
             }
@@ -85,6 +87,7 @@ export async function upsertSuccessStory(data: { id?: string, name: string, role
             data: {
                 name: data.name,
                 role: data.role,
+                description: data.description,
                 imageUrl: data.imageUrl,
                 isActive: data.isActive
             }

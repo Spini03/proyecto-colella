@@ -163,6 +163,7 @@ model SuccessStory {
   id        String   @id @default(cuid())
   name      String
   role      String
+  description String?
   imageUrl  String?
   order     Int      @default(0)
   isActive  Boolean  @default(true)

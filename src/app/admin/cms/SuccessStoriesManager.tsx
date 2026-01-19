@@ -9,6 +9,7 @@ interface Story {
   id: string
   name: string
   role: string
+  description?: string | null
   imageUrl: string | null
   isActive: boolean
 }
@@ -50,6 +51,7 @@ export function SuccessStoriesManager({ initialStories }: { initialStories: Stor
         id: editingId || undefined,
         name: formData.name,
         role: formData.role,
+        description: formData.description || undefined,
         imageUrl: formData.imageUrl || undefined,
         isActive: formData.isActive || false
     })
@@ -96,7 +98,7 @@ export function SuccessStoriesManager({ initialStories }: { initialStories: Stor
                 <div>
                     <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Nombre Completo</label>
                     <input 
-                        className="flex h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all dark:bg-neutral-800 dark:border-neutral-700"
+                        className="flex h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 focus:bg-transparent outline-none transition-all dark:bg-neutral-800 dark:border-neutral-700 dark:focus:bg-neutral-900"
                         value={formData.name || ''}
                         onChange={e => setFormData({...formData, name: e.target.value})}
                         placeholder="Ej: Lionel Messi"
@@ -105,16 +107,25 @@ export function SuccessStoriesManager({ initialStories }: { initialStories: Stor
                 <div>
                    <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Rol / Cargo</label>
                    <input 
-                       className="flex h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all dark:bg-neutral-800 dark:border-neutral-700"
+                       className="flex h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 focus:bg-transparent outline-none transition-all dark:bg-neutral-800 dark:border-neutral-700 dark:focus:bg-neutral-900"
                        value={formData.role || ''}
                        onChange={e => setFormData({...formData, role: e.target.value})}
                        placeholder="Ej: Futbolista Profesional"
                    />
                </div>
                <div>
+                   <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Descripción (Opcional)</label>
+                   <textarea 
+                       className="flex w-full min-h-[100px] rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 focus:bg-transparent outline-none transition-all dark:bg-neutral-800 dark:border-neutral-700 dark:focus:bg-neutral-900 resize-none"
+                       value={formData.description || ''}
+                       onChange={e => setFormData({...formData, description: e.target.value})}
+                       placeholder="Breve reseña sobre el proceso de rehabilitación y logros..."
+                   />
+               </div>
+               <div>
                    <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">URL de la Imagen</label>
-                   <input 
-                       className="flex h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all dark:bg-neutral-800 dark:border-neutral-700"
+                    <input 
+                       className="flex h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 focus:bg-transparent outline-none transition-all dark:bg-neutral-800 dark:border-neutral-700 dark:focus:bg-neutral-900"
                        value={formData.imageUrl || ''}
                        onChange={e => setFormData({...formData, imageUrl: e.target.value})}
                        placeholder="https://images.unsplash.com/..."
