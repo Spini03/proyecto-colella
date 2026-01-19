@@ -68,7 +68,7 @@ export async function getSuccessStories() {
     })
 }
 
-export async function upsertSuccessStory(data: { id?: string, name: string, role: string, description?: string, imageUrl?: string, isActive: boolean }) {
+export async function upsertSuccessStory(data: { id?: string, name: string, role: string, description?: string | null, imageUrl?: string, isActive: boolean }) {
     await requireAdmin()
     
     if (data.id) {

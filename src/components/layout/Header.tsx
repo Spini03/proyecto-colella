@@ -13,25 +13,18 @@ import { usePathname } from 'next/navigation'
 export function Header() {
   const pathname = usePathname()
   const { data: session } = useSession()
-  const [isScrolled, setIsScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  
   const { scrollY } = useScroll()
-  /* Hook Call Order Must Be Preserved (Moved useEffect up) */
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20)
-    }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+  const headerOpacity = useTransform(scrollY, [0, 100], [0, 1])
+  
+  // Mobile menu still triggers solid background
+  const bgOpacity = mobileMenuOpen ? 1 : headerOpacity
 
-  // Calculate this before potential early return (though hooks must be first regardless)
   const isAdmin = session?.user?.role === 'ADMIN'
 
   // Ocultar el header en el panel de administrador
-  // This must be AFTER all hook calls
   if (pathname?.startsWith('/admin')) return null
-
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id)
@@ -43,16 +36,17 @@ export function Header() {
 
   return (
     <motion.header
-      className={cn(
-        'fixed top-0 z-50 w-full transition-all duration-300 px-4 md:px-8 py-3',
-        isScrolled || mobileMenuOpen
-          ? 'bg-white/95 backdrop-blur-md shadow-sm dark:bg-[var(--color-brand-dark)]/90' 
-          : 'bg-transparent'
-      )}
+      className="fixed top-0 z-50 w-full px-4 md:px-8 py-3"
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5 }}
     >
+        {/* Background Layer */}
+        <motion.div 
+            className="absolute inset-0 bg-white/95 dark:bg-neutral-900/90 backdrop-blur-md shadow-sm -z-10"
+            style={{ opacity: bgOpacity }}
+        />
+
       <div className="mx-auto flex max-w-7xl items-center justify-between">
         {/* Logo */}
         <Link 

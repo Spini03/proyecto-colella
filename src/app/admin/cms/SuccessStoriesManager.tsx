@@ -51,7 +51,7 @@ export function SuccessStoriesManager({ initialStories }: { initialStories: Stor
         id: editingId || undefined,
         name: formData.name,
         role: formData.role,
-        description: formData.description || undefined,
+        description: formData.description || null,
         imageUrl: formData.imageUrl || undefined,
         isActive: formData.isActive || false
     })

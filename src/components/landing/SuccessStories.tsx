@@ -23,7 +23,7 @@ export function SuccessStories() {
   if (stories.length === 0) return null
 
   return (
-    <section className="bg-white py-20 dark:bg-neutral-900">
+    <section className="relative bg-gradient-to-b from-white to-gray-50 py-20 dark:bg-neutral-900 dark:from-neutral-900 dark:to-neutral-900">
       <div className="container mx-auto px-4">
         <h2 className="mb-12 text-center text-3xl font-bold font-display">
           Casos de Éxito
@@ -58,11 +58,16 @@ export function SuccessStories() {
               <div className="absolute bottom-0 left-0 right-0 p-8 text-white transform transition-transform duration-500 translate-y-2 group-hover:translate-y-0">
                 <h3 className="text-2xl font-bold mb-1">{athlete.name}</h3>
                 <p className="text-teal-400 font-bold uppercase tracking-wider text-xs mb-3">{athlete.role}</p>
-                {athlete.description && (
-                    <p className="text-gray-200 text-sm leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100 line-clamp-3">
-                        {athlete.description}
-                    </p>
-                )}
+                {/* Description wrapper that expands on hover */}
+                <div className="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-500">
+                  <div className="overflow-hidden">
+                    {athlete.description && (
+                      <p className="text-gray-200 text-sm leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100 line-clamp-3">
+                          {athlete.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
             </motion.div>
           ))}
