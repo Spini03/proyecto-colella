@@ -139,7 +139,7 @@ export function BookingWidget() {
           </p>
         </div>
         
-        <div className="bg-[#f8f9fa] dark:bg-neutral-900/50 border border-gray-100 dark:border-neutral-800 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[600px] backdrop-blur-sm">
+        <div className="bg-[#f8f9fa] dark:bg-neutral-900/50 border border-gray-100 dark:border-neutral-800 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[500px] backdrop-blur-sm">
           
           {/* Left Column: Calendar */}
           <div className="w-full md:w-1/2 p-4 md:p-12 border-b md:border-b-0 md:border-r border-gray-100 dark:border-neutral-800 bg-white/50 dark:bg-white/5">
@@ -178,7 +178,7 @@ export function BookingWidget() {
                     weeks: 'space-y-1',
                     week: 'flex w-full justify-between',
                     day: cn(
-                      "h-10 w-10 p-0 font-medium transition-all hover:bg-[var(--color-brand-accent)] hover:text-[var(--color-brand-primary)] dark:hover:bg-neutral-800 rounded-full flex items-center justify-center relative cursor-pointer"
+                      "h-10 w-10 p-0 font-medium transition-all duration-300 hover:scale-110 hover:shadow-md hover:bg-[var(--color-brand-accent)] hover:text-[var(--color-brand-primary)] dark:hover:bg-neutral-800 rounded-full flex items-center justify-center relative cursor-pointer"
                     ),
                     day_button: 'h-10 w-10 p-0 font-medium rounded-full flex items-center justify-center',
                     selected: 'bg-[var(--color-brand-primary)] text-white hover:bg-[var(--color-brand-primary)] hover:text-white shadow-lg shadow-teal-500/30',
@@ -197,14 +197,40 @@ export function BookingWidget() {
                 {step === 'date' && (
                    <motion.div 
                      initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-                     className="flex flex-col items-center justify-center h-full text-center space-y-6"
+                     className="flex flex-col h-full"
                    >
-                     <div className="w-20 h-20 bg-teal-500/5 dark:bg-teal-500/10 rounded-3xl flex items-center justify-center mb-2 border border-teal-500/10">
-                        <CalendarIcon className="w-10 h-10 text-[var(--color-brand-primary)] opacity-40" />
-                     </div>
-                     <div>
-                       <h4 className="text-xl font-bold mb-2">Comenzá tu Reserva</h4>
-                       <p className="text-gray-500 dark:text-gray-400">Seleccioná un día disponible en el calendario para ver los horarios.</p>
+                     <div className="flex-1 flex flex-col justify-center items-center text-center space-y-8 p-6">
+                        <div className="space-y-4 max-w-sm">
+                            <h4 className="text-3xl font-bold font-display tracking-tight text-gray-900 dark:text-white">
+                                Tu Recuperación<br/>
+                                <span className="text-teal-600 dark:text-teal-400">Comienza Acá</span>
+                            </h4>
+                            <p className="text-gray-500 dark:text-gray-400 leading-relaxed">
+                                Sesiones personalizadas de Kinesiología y Terapia Manual para ayudarte a volver a moverte sin dolor.
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
+                            <div className="p-4 rounded-2xl bg-teal-50 dark:bg-teal-900/10 border border-teal-100 dark:border-teal-900/50 flex flex-col items-center justify-center gap-2">
+                                <Clock className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                                <div className="text-center">
+                                    <span className="block text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider text-[10px]">Duración</span>
+                                    <span className="text-lg font-bold text-gray-700 dark:text-gray-200">{config.duration} min</span>
+                                </div>
+                            </div>
+                            <div className="p-4 rounded-2xl bg-teal-50 dark:bg-teal-900/10 border border-teal-100 dark:border-teal-900/50 flex flex-col items-center justify-center gap-2">
+                                <span className="text-xl font-bold text-teal-600 dark:text-teal-400">$</span>
+                                <div className="text-center">
+                                    <span className="block text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider text-[10px]">Inversion</span>
+                                    <span className="text-lg font-bold text-gray-700 dark:text-gray-200">${config.price.toLocaleString('es-AR')}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-sm text-gray-400 dark:text-gray-500 animate-pulse">
+                            <CalendarIcon className="w-4 h-4" />
+                            <span>Seleccioná una fecha para continuar</span>
+                        </div>
                      </div>
                    </motion.div>
                 )}
