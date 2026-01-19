@@ -140,45 +140,56 @@ export async function bookAppointment(data: { name: string; phone: string; date:
   const config = await getSystemConfig() 
 
   try {
-     // Update user profile
-     await prisma.user.update({
-        where: { id: userId },
-        data: {
-            phoneNumber: phone,
-            name: name
-        }
-     })
-     
      // Re-calculate Deposit
      const depositAmount = config.price * (config.depositPercentage / 100);
+     const bookingDate = new Date(date);
 
-     // VERIFICATION: Check if slot is still free
-     // This prevents double booking if two users submit simultaneously
-     const existing = await prisma.appointment.findFirst({
-        where: {
-            datetime: new Date(date),
-            status: { not: 'CANCELLED' }
-        }
-     })
+     // Transaction: Check availability + Create Appointment atomically
+     const appointment = await prisma.$transaction(async (tx) => {
+        // 1. Strict Availability Check
+        // Find any appointment at this EXACT time that is NOT cancelled
+        const existing = await tx.appointment.findFirst({
+            where: {
+                datetime: bookingDate,
+                status: { not: 'CANCELLED' }
+            }
+        });
 
-     if (existing) {
-        return { 
-            success: false, 
-            error: 'Este horario ya ha sido reservado por otra persona. Por favor, selecciona un horario diferente.' 
+        if (existing) {
+            throw new Error('SLOT_TAKEN');
         }
-     }
 
-     // Create Appointment (PENDING payment)
-     const appointment = await prisma.appointment.create({
-        data: {
-            datetime: new Date(date),
-            status: 'PENDING',
-            patientId: userId,
-            depositPaid: false
+        // 2. Check Blockouts (Manual Blocks)
+        // Check if the specific Day is blocked out
+        const blockout = await tx.blockoutDate.findFirst({
+             where: { date: startOfDay(bookingDate) }
+        });
+        
+        if (blockout) {
+             throw new Error('DATE_BLOCKED');
         }
-     })
+        
+        // 3. Update User Profile (ensure we have latest phone/name)
+        await tx.user.update({
+            where: { id: userId },
+            data: {
+                phoneNumber: phone,
+                name: name
+            }
+        });
+
+        // 4. Create Appointment
+        return await tx.appointment.create({
+            data: {
+                datetime: bookingDate,
+                status: 'PENDING',
+                patientId: userId,
+                depositPaid: false
+            }
+        });
+     });
      
-     // Create Mercado Pago Preference
+     // Create Mercado Pago Preference (Outside Transaction)
      const appUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || process.env.AUTH_URL || 'http://localhost:3000';
      
      const preferenceBody = {
@@ -193,7 +204,6 @@ export async function bookAppointment(data: { name: string; phone: string; date:
         ],
         payer: {
             email: session.user.email || 'unknown@email.com',
-            // email: "email_falso_para_test@gmail.com",
             name: name
         },
         external_reference: appointment.id,
@@ -213,6 +223,9 @@ export async function bookAppointment(data: { name: string; phone: string; date:
      });
 
      if (!preferenceResponse.init_point) {
+        // If MP fails, we might want to cancel the appointment we just created?
+        // Or leave it as PENDING and let a cleanup job handle it / let user retry payment.
+        // For now, throwing error.
         throw new Error('Failed to create payment preference');
      }
      
@@ -220,8 +233,18 @@ export async function bookAppointment(data: { name: string; phone: string; date:
        success: true, 
        paymentUrl: preferenceResponse.init_point 
      }
-  } catch (error) {
+
+  } catch (error: any) {
       console.error('Book Appointment Error:', error)
+      
+      // Handle known errors
+      if (error.message === 'SLOT_TAKEN' || error.message === 'DATE_BLOCKED') {
+          return { 
+              success: false, 
+              error: 'Este horario ya ha sido reservado por otra persona o no está disponible. Por favor, selecciona un horario diferente.' 
+          }
+      }
+
       return { success: false, error: 'Booking failed. Please try again.' }
   }
 }

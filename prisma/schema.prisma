@@ -90,6 +90,7 @@ model Appointment {
   patient     User     @relation(fields: [patientId], references: [id])
 
   @@index([patientId, status])
+  @@index([datetime, status])
 }
 
 model BlockoutDate {
