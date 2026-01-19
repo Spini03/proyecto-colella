@@ -186,14 +186,22 @@ export async function updateWorkSchedule(schedule: { dayOfWeek: number, startTim
 // --- Availability Overrides ---
 export async function addAvailabilityOverride(data: { date: Date, startTime: string, endTime: string }) {
     await requireAdmin()
-    await prisma.availabilityOverride.create({
-        data: {
+    const override = await prisma.availabilityOverride.upsert({
+        where: {
+            date: data.date
+        },
+        update: {
+            startTime: data.startTime,
+            endTime: data.endTime
+        },
+        create: {
             date: data.date,
             startTime: data.startTime,
             endTime: data.endTime
         }
     })
     revalidatePath('/admin/settings')
+    return override
 }
 
 export async function getAvailabilityOverrides() {

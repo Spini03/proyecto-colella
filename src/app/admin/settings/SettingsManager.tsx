@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { updateGlobalSettings, updateWorkSchedule, addAvailabilityOverride, deleteAvailabilityOverride } from '../actions'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
@@ -83,24 +83,71 @@ export function SettingsManager({
     const DAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
     // -- Overrides --
+    const [overrides, setOverrides] = useState(initialOverrides)
     const [newOverride, setNewOverride] = useState({ date: '', startTime: '09:00', endTime: '18:00' })
     const [isAddingOverride, setIsAddingOverride] = useState(false)
+    const [dateError, setDateError] = useState<string | null>(null)
+
+    // Sync from props if they change (e.g. initial load or subsequent server refresh)
+    useEffect(() => {
+        setOverrides(initialOverrides)
+    }, [initialOverrides])
+
+    const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const dateStr = e.target.value
+        setNewOverride({...newOverride, date: dateStr})
+        
+        if (!dateStr) {
+            setDateError(null)
+            return
+        }
+
+        // Validate date vs today
+        const todayStr = format(new Date(), 'yyyy-MM-dd')
+         
+         if (dateStr < todayStr) {
+             setDateError('La fecha no puede ser anterior a hoy.')
+         } else {
+             setDateError(null)
+         }
+    }
 
     const addOverride = async () => {
-        if (!newOverride.date) return
+        if (!newOverride.date || dateError) return
         setIsAddingOverride(true)
-        await addAvailabilityOverride({
-            date: new Date(newOverride.date),
+
+        // Parse YYYY-MM-DD manually to local midnight to avoid UTC timezone shift
+        const [year, month, day] = newOverride.date.split('-').map(Number)
+        const localDate = new Date(year, month - 1, day)
+
+        const savedOverride = await addAvailabilityOverride({
+            date: localDate,
             startTime: newOverride.startTime,
             endTime: newOverride.endTime
         })
+        
+        // Update local state immediately
+        setOverrides(prev => {
+             const exists = prev.find(o => o.id === savedOverride.id)
+             // Ensure date is Date object for client state
+             const dateObj = new Date(savedOverride.date)
+             
+             if (exists) {
+                 return prev.map(o => o.id === savedOverride.id ? { ...savedOverride, date: dateObj } : o)
+             }
+             return [...prev, { ...savedOverride, date: dateObj }]
+        })
+
         setNewOverride({ date: '', startTime: '09:00', endTime: '18:00' })
         setIsAddingOverride(false)
         router.refresh()
     }
 
+
     const deleteOverride = async (id: string) => {
         if (!confirm('Eliminar excepción?')) return
+        // Optimistic update
+        setOverrides(prev => prev.filter(o => o.id !== id))
         await deleteAvailabilityOverride(id)
         router.refresh()
     }
@@ -194,7 +241,7 @@ export function SettingsManager({
 
             {/* Exceptions */}
             <section className="bg-white dark:bg-neutral-800 p-6 rounded-xl shadow-sm border dark:border-neutral-700">
-                <h2 className="text-xl font-bold mb-4">Días Excepcionales (Overrides)</h2>
+                <h2 className="text-xl font-bold mb-4">Días Excepcionales</h2>
                 <p className="text-sm text-gray-500 mb-4">Agrega disponibilidad específica para una fecha puntual. Esto sobreescribe (o agrega) al horario semanal.</p>
                 
                 <div className="flex flex-wrap gap-4 items-end mb-6 bg-gray-50 dark:bg-neutral-900 p-4 rounded-lg">
@@ -202,10 +249,14 @@ export function SettingsManager({
                         <label className="block text-sm font-medium mb-1">Fecha</label>
                         <input 
                             type="date" 
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-900 dark:border-neutral-700"
+                            className={cn(
+                                "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-900 dark:border-neutral-700",
+                                dateError ? "border-red-500 focus-visible:ring-red-500" : ""
+                            )}
                             value={newOverride.date}
-                            onChange={(e) => setNewOverride({...newOverride, date: e.target.value})}
+                            onChange={handleDateChange}
                         />
+                        {dateError && <p className="text-red-500 text-xs mt-1">{dateError}</p>}
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">Inicio</label>
@@ -225,13 +276,13 @@ export function SettingsManager({
                             onChange={(e) => setNewOverride({...newOverride, endTime: e.target.value})}
                         />
                     </div>
-                    <Button onClick={addOverride} disabled={isAddingOverride}>
+                    <Button onClick={addOverride} disabled={isAddingOverride || !!dateError || !newOverride.date}>
                         Agregar
                     </Button>
                 </div>
 
                 <div className="space-y-2">
-                    {initialOverrides.map(ov => (
+                    {overrides.map(ov => (
                         <div key={ov.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg">
                             <div className="flex gap-4">
                                 <span className="font-bold">{format(ov.date, 'dd/MM/yyyy')}</span>
@@ -242,7 +293,7 @@ export function SettingsManager({
                             </Button>
                         </div>
                     ))}
-                    {initialOverrides.length === 0 && (
+                    {overrides.length === 0 && (
                         <p className="text-gray-400 italic">No hay excepciones configuradas.</p>
                     )}
                 </div>
