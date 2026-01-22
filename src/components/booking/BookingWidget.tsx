@@ -5,7 +5,7 @@ import { DayPicker } from 'react-day-picker'
 import { format, startOfToday, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Loader2, Calendar as CalendarIcon, Clock, User, CheckCircle2 } from 'lucide-react'
+import { Loader2, Calendar as CalendarIcon, Clock, User, CheckCircle2, AlertTriangle } from 'lucide-react'
 import { useSession, signIn } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 
@@ -15,7 +15,18 @@ import { getAvailability, bookAppointment } from '@/app/actions'
 import { getPublicConfig } from '@/app/public-config' // New action
 import { cn } from '@/lib/utils'
 import { PhoneInput } from '@/components/ui/phone-input'
+
 import { isValidPhoneNumber, type Value } from 'react-phone-number-input'
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { CANCELLATION_POLICY_TEXT } from '@/lib/config/terms'
 
 import 'react-day-picker/dist/style.css'
 
@@ -29,6 +40,8 @@ export function BookingWidget() {
   const [bookingStatus, setBookingStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null)
   const [phoneNumber, setPhoneNumber] = useState<Value>()
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [showTermsError, setShowTermsError] = useState(false)
   
   // Dynamic Config State
   const [config, setConfig] = useState<{ price: number, duration: number, depositPercentage: number } | null>(null)
@@ -96,6 +109,12 @@ export function BookingWidget() {
   const handleBooking = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!selectedDate || !selectedSlot) return
+
+    if (!termsAccepted) {
+      setShowTermsError(true)
+      return
+    }
+    setShowTermsError(false)
 
     setBookingStatus('loading')
     const formData = new FormData(e.currentTarget)
@@ -376,6 +395,55 @@ export function BookingWidget() {
                                             ${(config.price * (1 - config.depositPercentage / 100)).toLocaleString('es-AR')}
                                          </span>
                                      </div>
+                                 </div>
+
+                                 <div className="flex items-center gap-3 px-1 my-4">
+                                    <Checkbox 
+                                        id="terms" 
+                                        checked={termsAccepted}
+                                        onCheckedChange={(checked) => {
+                                            setTermsAccepted(checked as boolean)
+                                            if (checked) setShowTermsError(false)
+                                        }}
+                                        className={cn(showTermsError && "border-red-500")}
+                                    />
+                                    <div className="space-y-1 leading-none">
+                                        <label
+                                            htmlFor="terms"
+                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-gray-500 dark:text-gray-400"
+                                        >
+                                            He leído y acepto la{' '}
+                                            <Dialog>
+                                                <DialogTrigger asChild>
+                                                    <span className="text-[var(--color-brand-primary)] hover:underline cursor-pointer font-bold">
+                                                        Política de Cancelación
+                                                    </span>
+                                                </DialogTrigger>
+                                                <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+                                                    <DialogHeader>
+                                                        <DialogTitle>Política de Cancelación</DialogTitle>
+                                                        <DialogDescription className="whitespace-pre-wrap mt-4 text-left">
+                                                            {CANCELLATION_POLICY_TEXT}
+                                                        </DialogDescription>
+                                                    </DialogHeader>
+                                                </DialogContent>
+                                            </Dialog>
+                                            .
+                                        </label>
+                                        {showTermsError && (
+                                            <p className="text-xs text-red-500 font-medium">
+                                                Debes aceptar la política de cancelación para continuar.
+                                            </p>
+                                        )}
+                                    </div>
+                                 </div>
+
+                                 <div className="mb-6 p-4 rounded-xl bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800/50 flex gap-3 text-orange-800 dark:text-orange-200/90 text-xs leading-relaxed">
+                                    <AlertTriangle className="w-5 h-5 shrink-0 text-orange-600 dark:text-orange-400" />
+                                    <p>
+                                        <span className="font-bold block mb-1 uppercase tracking-wide text-orange-700 dark:text-orange-300">Importante: 24hs de Anticipación</span>
+                                        Recordá que tenés hasta 24hs antes para cancelar o reprogramar el turno. De no poder asistir o no avisar a tiempo, <span className="font-bold">la seña se perderá.</span>
+                                    </p>
                                  </div>
 
                                  <div className="flex flex-col sm:flex-row gap-4 mt-2">

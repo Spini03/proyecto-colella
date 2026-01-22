@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { HeroSection } from "@/components/landing/HeroSection"
 import { SuccessStories } from "@/components/landing/SuccessStories"
 import { BookingWidget } from "@/components/booking/BookingWidget"
@@ -15,7 +16,9 @@ export default function Home() {
 
       <AboutSection />
 
-      <BookingWidget />
+      <Suspense fallback={<div className="py-24 text-center">Cargando reserva...</div>}>
+        <BookingWidget />
+      </Suspense>
 
       <WhatsAppFloatingButton />
       
