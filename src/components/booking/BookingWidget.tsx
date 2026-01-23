@@ -5,7 +5,7 @@ import { DayPicker } from 'react-day-picker'
 import { format, startOfToday, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Loader2, Calendar as CalendarIcon, Clock, User, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { Loader2, Calendar as CalendarIcon, Clock, User, CheckCircle2, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useSession, signIn } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 
@@ -191,11 +191,8 @@ export function BookingWidget() {
                     month: 'space-y-6',
                     month_caption: 'flex justify-center mb-10 text-lg font-bold capitalize h-8 items-center w-full',
                     nav: 'flex items-center gap-1.5 absolute right-0 top-0 h-8 z-10',
-                    button_previous: cn(
-                      "h-7 w-7 bg-transparent p-0 transition-all hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-lg flex items-center justify-center border border-gray-100 dark:border-neutral-800 text-gray-500 dark:text-gray-400 relative z-20 cursor-pointer"
-                    ),
-                    button_next: cn(
-                      "h-7 w-7 bg-transparent p-0 transition-all hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-lg flex items-center justify-center border border-gray-100 dark:border-neutral-800 text-gray-500 dark:text-gray-400 relative z-20 cursor-pointer"
+                    nav_button: cn(
+                      "h-8 w-8 bg-transparent p-0 transition-all hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded-xl flex items-center justify-center border border-gray-100 dark:border-neutral-800 text-teal-600 dark:text-teal-400 relative z-20 cursor-pointer"
                     ),
                     month_grid: 'border-collapse',
                     weekdays: 'flex justify-between mb-4',
@@ -210,6 +207,13 @@ export function BookingWidget() {
                     today: 'text-[var(--color-brand-primary)] font-black after:content-[""] after:absolute after:bottom-1 after:w-1 after:h-1 after:bg-[var(--color-brand-primary)] after:rounded-full',
                     outside: 'text-gray-300 dark:text-neutral-700 opacity-50',
                     disabled: 'text-gray-200 dark:text-neutral-800 cursor-not-allowed opacity-30',
+                  }}
+                  components={{
+                    Chevron: ({ orientation }) => {
+                      return orientation === 'left' 
+                        ? <ChevronLeft className="w-4 h-4" /> 
+                        : <ChevronRight className="w-4 h-4" />
+                    }
                   }}
                 />
               </div>
