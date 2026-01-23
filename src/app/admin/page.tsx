@@ -62,24 +62,45 @@ export default async function AdminDashboard() {
                                             {format(parseISO(app.datetime), 'HH:mm')}
                                         </span>
                                     </div>
-                                    <div className="space-y-1">
-                                        <div className="flex items-center gap-2">
-                                            <p className="font-extrabold text-xl text-gray-900 dark:text-white leading-tight">
-                                                {app.patient.name || 'Sin nombre'}
-                                            </p>
-                                        </div>
-                                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                                            <span className="flex items-center gap-1.5 text-sm text-gray-500 font-medium">
-                                                <Mail className="h-3.5 w-3.5 opacity-60" />
-                                                {app.patient.email}
-                                            </span>
-                                            {app.patient.phoneNumber && (
-                                                <span className="flex items-center gap-1.5 text-sm font-bold text-teal-600 dark:text-teal-400">
-                                                    <Phone className="h-3.5 w-3.5" />
-                                                    {app.patient.phoneNumber}
+                                    <div className="space-y-3">
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-extrabold text-xl text-gray-900 dark:text-white leading-tight">
+                                                    {app.patient.name || 'Sin nombre'}
+                                                </p>
+                                            </div>
+                                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
+                                                <span className="flex items-center gap-1.5 text-sm text-gray-500 font-medium">
+                                                    <Mail className="h-3.5 w-3.5 opacity-60" />
+                                                    {app.patient.email}
                                                 </span>
-                                            )}
+                                                {app.patient.phoneNumber && (
+                                                    <span className="flex items-center gap-1.5 text-sm font-bold text-teal-600 dark:text-teal-400">
+                                                        <Phone className="h-3.5 w-3.5" />
+                                                        {app.patient.phoneNumber}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
+
+                                        {(app.patientNotes || app.medicalReportUrl) && (
+                                            <div className="p-3 bg-gray-50 dark:bg-neutral-800 rounded-xl border border-gray-100 dark:border-neutral-700 text-sm max-w-md">
+                                                <p className="font-bold text-gray-700 dark:text-gray-300 mb-1 text-xs uppercase tracking-wide">Información Médica</p>
+                                                {app.patientNotes && (
+                                                    <p className="text-gray-600 dark:text-gray-400 mb-2 italic">"{app.patientNotes}"</p>
+                                                )}
+                                                {app.medicalReportUrl && (
+                                                    <a 
+                                                        href={app.medicalReportUrl} 
+                                                        target="_blank" 
+                                                        rel="noopener noreferrer"
+                                                        className="inline-flex items-center gap-2 text-teal-600 dark:text-teal-400 font-bold hover:underline text-xs"
+                                                    >
+                                                        <span>📄 Ver Estudio Adjunto</span>
+                                                    </a>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-4 sm:pt-0 border-gray-100 dark:border-neutral-800">

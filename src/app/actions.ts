@@ -126,20 +126,69 @@ export async function getAvailability(dateStr: string) {
   return { slots }
 }
 
-export async function bookAppointment(data: { name: string; phone: string; date: string }) {
+import { writeFile, mkdir } from 'fs/promises'
+import { join } from 'path'
+import { randomUUID } from 'crypto'
+
+// Updated signature to accept FormData
+export async function bookAppointment(formData: FormData) {
   const session = await auth()
   
   if (!session?.user?.id) {
     return { success: false, error: 'Unauthorized' }
   }
 
-  const { name, phone, date } = data
+  // Extract fields from FormData
+  const name = formData.get('name') as string
+  const phone = formData.get('phone') as string
+  const date = formData.get('date') as string
+  const patientNotes = formData.get('patientNotes') as string | null
+  const medicalFile = formData.get('medicalFile') as File | null
+
+  if (!name || !phone || !date) {
+      return { success: false, error: 'Missing required fields' }
+  }
+
   const userId = session.user.id
   
   // Re-fetch config to get latest price
   const config = await getSystemConfig() 
 
   try {
+     // File Upload Handling
+     let medicalReportUrl: string | null = null
+
+     if (medicalFile && medicalFile.size > 0) {
+         // Validate File
+         const validTypes = ['application/pdf', 'image/jpeg', 'image/png']
+         const maxSize = 5 * 1024 * 1024 // 5MB
+
+         if (!validTypes.includes(medicalFile.type)) {
+             return { success: false, error: 'Formato de archivo no válido. Solo PDF, JPG o PNG.' }
+         }
+
+         if (medicalFile.size > maxSize) {
+             return { success: false, error: 'El archivo es demasiado grande (Máx 5MB).' }
+         }
+
+         // Create Directory
+         const uploadDir = join(process.cwd(), 'public', 'uploads', 'medical')
+         await mkdir(uploadDir, { recursive: true })
+
+         // Save File
+         const fileExtension = medicalFile.name.split('.').pop()
+         const fileName = `${Date.now()}-${randomUUID()}.${fileExtension}`
+         const filePath = join(uploadDir, fileName)
+         
+         const bytes = await medicalFile.arrayBuffer()
+         const buffer = Buffer.from(bytes)
+         
+         await writeFile(filePath, buffer)
+         
+         // Set Relative Path
+         medicalReportUrl = `/uploads/medical/${fileName}`
+     }
+
      // Re-calculate Deposit
      const depositAmount = config.price * (config.depositPercentage / 100);
      const bookingDate = new Date(date);
@@ -184,7 +233,9 @@ export async function bookAppointment(data: { name: string; phone: string; date:
                 datetime: bookingDate,
                 status: 'PENDING',
                 patientId: userId,
-                depositPaid: false
+                depositPaid: false,
+                patientNotes: patientNotes || null,
+                medicalReportUrl: medicalReportUrl
             }
         });
      });

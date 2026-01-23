@@ -125,19 +125,25 @@ export function BookingWidget() {
         return
     }
 
-    const data = {
-        name: formData.get('name') as string,
-        phone: phoneNumber || (formData.get('phone') as string),
-        date: selectedSlot
-    }
+    // Append standard fields that might be missing or need formatting
+    // Note: 'name' and 'patientNotes' and 'medicalFile' are already in formData from the form
+    // We just need to ensure 'phone' is the formatted one and 'date' is added
+    formData.set('phone', phoneNumber || (formData.get('phone') as string))
+    formData.set('date', selectedSlot)
 
     try {
-      const res = await bookAppointment(data)
+      // Create a simplified version of formData to pass to server action if needed, 
+      // but bookAppointment now accepts FormData directly!
+      const res = await bookAppointment(formData)
+      
       if (res.success) {
         setPaymentUrl(res.paymentUrl || null)
         setBookingStatus('success')
         setStep('confirmation')
       } else {
+        if (res.error) {
+             alert(res.error) // Simple alert for specific errors like file size/type
+        }
         setBookingStatus('error')
       }
     } catch {
@@ -394,6 +400,47 @@ export function BookingWidget() {
                                          <span className="text-xs font-bold text-gray-400">
                                             ${(config.price * (1 - config.depositPercentage / 100)).toLocaleString('es-AR')}
                                          </span>
+                                     </div>
+                                 </div>
+
+                                 <div className="space-y-6">
+                                     <div className="space-y-3">
+                                         <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Notas sobre la lesión / Motivo (Opcional)</label>
+                                         <textarea 
+                                             name="patientNotes"
+                                             rows={3}
+                                             className="w-full p-4 bg-white dark:bg-black/20 border border-gray-100 dark:border-neutral-800 rounded-2xl focus:ring-2 ring-[var(--color-brand-primary)] focus:bg-transparent outline-none transition-all resize-none text-sm"
+                                             placeholder="Describí brevemente tu dolor o motivo de consulta..."
+                                         />
+                                     </div>
+
+                                     <div className="space-y-3">
+                                         <label className="block text-xs font-black uppercase tracking-widest text-gray-400 flex justify-between">
+                                             <span>Adjuntar estudio (PDF/Imagen)</span>
+                                             <span className="text-[10px] font-bold opacity-50">MÁX 5MB</span>
+                                         </label>
+                                         <div className="p-4 bg-white dark:bg-black/20 border border-gray-100 dark:border-neutral-800 rounded-2xl">
+                                             <input 
+                                                 type="file" 
+                                                 name="medicalFile"
+                                                 accept=".pdf,.jpg,.jpeg,.png"
+                                                 onChange={(e) => {
+                                                     const file = e.target.files?.[0];
+                                                     if (file && file.size > 5 * 1024 * 1024) {
+                                                         alert('El archivo es demasiado grande (Máx 5MB)');
+                                                         e.target.value = '';
+                                                     }
+                                                 }}
+                                                 className="w-full text-sm text-gray-500
+                                                 file:mr-4 file:py-2 file:px-4
+                                                 file:rounded-xl file:border-0
+                                                 file:text-xs file:font-black file:uppercase
+                                                 file:bg-teal-500/10 file:text-teal-600
+                                                 hover:file:bg-teal-500/20
+                                                 dark:file:bg-teal-500/20 dark:file:text-teal-400
+                                                 cursor-pointer"
+                                             />
+                                         </div>
                                      </div>
                                  </div>
 
