@@ -1,10 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: 'standalone', 
+
   experimental: {
     serverActions: {
       allowedOrigins: [
-        'bolectioned-pathognomonically-myrtie.ngrok-free.dev',
+        'fedecolellsfisio.com',         
+        'www.fedecolellsfisio.com',     
+        'bolectioned-pathognomonically-myrtie.ngrok-free.dev', 
         'localhost:3000'
       ]
     }
