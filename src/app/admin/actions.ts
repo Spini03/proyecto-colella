@@ -214,8 +214,44 @@ export async function getAvailabilityOverrides() {
     })
 }
 
+// ... existing code ...
 export async function deleteAvailabilityOverride(id: string) {
     await requireAdmin()
     await prisma.availabilityOverride.delete({ where: { id } })
     revalidatePath('/admin/settings')
 }
+
+// --- Blockout Dates ---
+export async function getBlockoutDates() {
+    await requireAdmin()
+    const today = new Date()
+    today.setHours(0,0,0,0)
+    return await prisma.blockoutDate.findMany({
+        where: { date: { gte: today } },
+        orderBy: { date: 'asc' }
+    })
+}
+
+export async function addBlockoutDate(date: Date, reason?: string) {
+    await requireAdmin()
+    // Ensure unique date? Model has @unique on date
+    // Upsert might be better or check first, but create is fine if we handle error or assume clean input
+    // Let's use upsert to be safe if user tries to block same day twice
+    const blockout = await prisma.blockoutDate.upsert({
+        where: { date: date },
+        update: { reason },
+        create: {
+            date,
+            reason
+        }
+    })
+    revalidatePath('/admin/settings')
+    return blockout
+}
+
+export async function deleteBlockoutDate(id: string) {
+    await requireAdmin()
+    await prisma.blockoutDate.delete({ where: { id } })
+    revalidatePath('/admin/settings')
+}
+

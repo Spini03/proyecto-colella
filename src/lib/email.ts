@@ -33,6 +33,7 @@ export async function sendConfirmationEmail(
           <div style="background-color: #f4f4f4; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <p><strong>Fecha:</strong> ${appointmentDate}</p>
             <p><strong>Hora:</strong> ${appointmentTime}</p>
+            <p><strong>Lugar:</strong> Pellegrini 2051, Piso 1</p>
           </div>
           <p>Si necesitas reprogramar o cancelar, por favor contáctanos con al menos 24 horas de anticipación.</p>
           <p>¡Te esperamos!</p>

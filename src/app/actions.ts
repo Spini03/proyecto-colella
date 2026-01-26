@@ -73,6 +73,31 @@ export async function getAvailability(dateStr: string) {
   const dayOfWeek = getDay(date)
   
   const config = await getSystemConfig(date)
+  // Ensure we are checking the "Business Day" which is stored as UTC Midnight
+  // dateStr is usually YYYY-MM-DD
+  const dateOnly = dateStr.split('T')[0] // safety
+  const utcDate = new Date(`${dateOnly}T00:00:00Z`)
+
+  // Check BlockoutDate - Search for exact match on UTC Midnight or range covering it?
+  // Since we don't know if bot stores 00:00:00Z strictly, let's look for the record 
+  // that represents this day. 
+  // Safest: Check range of that UTC day.
+  const startUtc = new Date(`${dateOnly}T00:00:00Z`)
+  const endUtc = new Date(`${dateOnly}T23:59:59Z`)
+  
+  const blockout = await prisma.blockoutDate.findFirst({
+      where: { 
+          date: {
+              gte: startUtc,
+              lte: endUtc
+          }
+      }
+  })
+  
+  if (blockout) {
+      return { slots: [] }
+  }
+
   const daySchedule = config.schedule[dayOfWeek]
 
   // Check if fully blocked via BlockoutDate (legacy/manual blocks)

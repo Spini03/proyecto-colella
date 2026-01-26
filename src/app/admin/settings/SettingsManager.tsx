@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { updateGlobalSettings, updateWorkSchedule, addAvailabilityOverride, deleteAvailabilityOverride } from '../actions'
+import { updateGlobalSettings, updateWorkSchedule, addAvailabilityOverride, deleteAvailabilityOverride, addBlockoutDate, deleteBlockoutDate } from '../actions'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { format, parseISO } from 'date-fns'
@@ -27,14 +27,22 @@ type Override = {
     endTime: string
 }
 
+type Blockout = {
+    id: string
+    date: Date
+    reason?: string | null
+}
+
 export function SettingsManager({ 
     initialSettings, 
     initialSchedule, 
-    initialOverrides 
+    initialOverrides,
+    initialBlockoutDates 
 }: { 
     initialSettings: Settings, 
     initialSchedule: Schedule[],
-    initialOverrides: Override[]
+    initialOverrides: Override[],
+    initialBlockoutDates: Blockout[]
 }) {
     const router = useRouter()
     
@@ -92,6 +100,49 @@ export function SettingsManager({
     useEffect(() => {
         setOverrides(initialOverrides)
     }, [initialOverrides])
+
+    // -- Blockouts --
+    const [blockouts, setBlockouts] = useState(initialBlockoutDates)
+    const [isAddingBlockout, setIsAddingBlockout] = useState(false)
+
+    useEffect(() => {
+        setBlockouts(initialBlockoutDates)
+    }, [initialBlockoutDates])
+
+    const handleDeleteBlockout = async (id: string) => {
+        if (!confirm('Eliminar bloqueo?')) return
+        setBlockouts(prev => prev.filter(b => b.id !== id))
+        await deleteBlockoutDate(id)
+        router.refresh()
+    }
+    
+    // Using the same "newOverride" state for adding blockouts for simplicity? 
+    // Or should we create a separate input for blocked dates?
+    // Let's create `addBlockout` that uses the same date input but adds as BLOCKOUT instead of OVERRIDE.
+    
+    const handleAddBlockout = async () => {
+         if (!newOverride.date || dateError) return
+         setIsAddingBlockout(true)
+
+         const [year, month, day] = newOverride.date.split('-').map(Number)
+         const localDate = new Date(year, month - 1, day)
+
+         const savedBlockout = await addBlockoutDate(localDate, "Manual Admin Block")
+         
+         setBlockouts(prev => {
+             const exists = prev.find(b => b.id === savedBlockout.id)
+             const dateObj = new Date(savedBlockout.date)
+             if (exists) {
+                 return prev.map(b => b.id === savedBlockout.id ? { ...savedBlockout, date: dateObj } : b)
+             }
+             return [...prev, { ...savedBlockout, date: dateObj }]
+         })
+
+         setNewOverride({ date: '', startTime: '09:00', endTime: '18:00' })
+         setIsAddingBlockout(false)
+         router.refresh()
+    }
+
 
     const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const dateStr = e.target.value
@@ -276,26 +327,70 @@ export function SettingsManager({
                             onChange={(e) => setNewOverride({...newOverride, endTime: e.target.value})}
                         />
                     </div>
-                    <Button onClick={addOverride} disabled={isAddingOverride || !!dateError || !newOverride.date}>
-                        Agregar
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button onClick={addOverride} disabled={isAddingOverride || isAddingBlockout || !!dateError || !newOverride.date}>
+                            Agregar Excepción
+                        </Button>
+                        <Button variant="destructive" onClick={handleAddBlockout} disabled={isAddingOverride || isAddingBlockout || !!dateError || !newOverride.date}>
+                            Bloquear Día
+                        </Button>
+                    </div>
                 </div>
 
-                <div className="space-y-2">
-                    {overrides.map(ov => (
-                        <div key={ov.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg">
-                            <div className="flex gap-4">
-                                <span className="font-bold">{format(ov.date, 'dd/MM/yyyy')}</span>
-                                <span>{ov.startTime} - {ov.endTime}</span>
-                            </div>
-                            <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => deleteOverride(ov.id)}>
-                                Eliminar
-                            </Button>
+                <div className="space-y-6">
+                    <div>
+                        <h3 className="font-semibold mb-2">Excepciones (Horarios Especiales)</h3>
+                        <div className="space-y-2">
+                            {overrides.map(ov => (
+                                <div key={ov.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg border border-teal-100 dark:border-teal-900/30">
+                                    <div className="flex gap-4 items-center">
+                                        <div className="h-2 w-2 rounded-full bg-teal-500"></div>
+                                        <span className="font-bold">{format(ov.date, 'dd/MM/yyyy')}</span>
+                                        <span className="text-sm text-gray-600 dark:text-gray-400">{ov.startTime} - {ov.endTime}</span>
+                                    </div>
+                                    <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => deleteOverride(ov.id)}>
+                                        Eliminar
+                                    </Button>
+                                </div>
+                            ))}
+                            {overrides.length === 0 && (
+                                <p className="text-gray-400 italic text-sm">No hay horarios especiales configurados.</p>
+                            )}
                         </div>
-                    ))}
-                    {overrides.length === 0 && (
-                        <p className="text-gray-400 italic">No hay excepciones configuradas.</p>
-                    )}
+                    </div>
+
+                    <div>
+                         <h3 className="font-semibold mb-2 text-red-600 dark:text-red-400">Días Bloqueados Completamente</h3>
+                         <div className="space-y-2">
+                            {blockouts.map(b => (
+                                <div key={b.id} className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-100 dark:border-red-900/30">
+                                    <div className="flex gap-4 items-center">
+                                        <div className="h-2 w-2 rounded-full bg-red-500"></div>
+                                        <span className="font-bold">
+                                            {(() => {
+                                                // Correction for timezone: If date is UTC midnight (e.g. 27th 00:00Z)
+                                                // Browser in -3 shows 26th 21:00.
+                                                // We want to show 27th.
+                                                // So we treat the UTC components as if they were local.
+                                                const d = new Date(b.date)
+                                                const userTimezoneOffset = d.getTimezoneOffset() * 60000
+                                                const adjustedDate = new Date(d.getTime() + userTimezoneOffset)
+                                                return format(adjustedDate, 'dd/MM/yyyy')
+                                            })()}
+                                        </span>
+                                        <span className="text-sm text-gray-600 dark:text-gray-400">{b.reason || 'Sin motivo'}</span>
+                                    </div>
+                                    <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteBlockout(b.id)}>
+                                        Eliminar
+                                    </Button>
+                                </div>
+                            ))}
+                             {blockouts.length === 0 && (
+                                <p className="text-gray-400 italic text-sm">No hay días bloqueados.</p>
+                            )}
+                         </div>
+                    </div>
+
                 </div>
             </section>
         </div>
