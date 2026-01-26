@@ -12,19 +12,19 @@ export default function BookingSuccessPage() {
           </div>
         </div>
         
-        <h1 className="text-2xl font-bold text-neutral-900 mb-2">Booking Confirmed!</h1>
-        <p className="text-neutral-600 mb-8">
-          Your deposit has been received and your appointment is confirmed. We look forward to seeing you.
+        <h1 className="text-2xl font-bold text-neutral-900 mb-2">¡Turno Confirmado!</h1>
+        <p className="text-neutral-600 mb-4">
+          Tu pago ha sido recibido y tu turno está confirmado. Te esperamos.
         </p>
         
-        <Link 
-          href="/dashboard" 
-          className="block w-full bg-neutral-900 text-white font-medium py-3 px-4 rounded-lg hover:bg-neutral-800 transition-colors"
-        >
-          Go to Dashboard
-        </Link>
-        <Link href="/" className="block mt-4 text-sm text-neutral-500 hover:text-neutral-900">
-          Back to Home
+         <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-8">
+            <p className="text-sm text-blue-800">
+                Se ha enviado un correo de confirmación a tu email con los detalles del turno.
+            </p>
+        </div>
+
+        <Link href="/" className="block w-full bg-neutral-900 text-white font-medium py-3 px-4 rounded-lg hover:bg-neutral-800 transition-colors">
+          Volver al Inicio
         </Link>
       </div>
     </div>

@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { useSession, signOut } from 'next-auth/react'
+import { useSession, signOut, signIn } from 'next-auth/react'
 
 import { usePathname } from 'next/navigation'
 
@@ -114,6 +114,14 @@ export function Header() {
           >
             Reservar
           </Button>
+          {!session && (
+            <button 
+              onClick={() => signIn('google')}
+              className="text-sm font-medium text-gray-500 hover:text-[var(--color-brand-primary)] transition-colors"
+            >
+              Iniciar Sesión
+            </button>
+          )}
         </nav>
 
         {/* Mobile Menu Toggle */}
@@ -176,7 +184,7 @@ export function Header() {
                 >
                   Sobre Mí
                 </motion.button>
-                {session && (
+                {session ? (
                    <button 
                      onClick={() => {
                        signOut();
@@ -186,6 +194,19 @@ export function Header() {
                    >
                      Cerrar Sesión
                    </button>
+                ) : (
+                  <motion.button 
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.25 }}
+                    onClick={() => {
+                      signIn('google');
+                      setMobileMenuOpen(false);
+                    }}
+                    className="text-left border-b border-gray-100 dark:border-neutral-800 pb-4 text-gray-500 font-medium"
+                  >
+                    Iniciar Sesión
+                  </motion.button>
                 )}
                 <motion.div 
                    initial={{ x: -20, opacity: 0 }}

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { payment } from '@/lib/mercadopago';
 import { prisma } from '@/lib/prisma';
+import { sendConfirmationEmail } from '@/lib/email';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,7 +25,8 @@ export async function POST(request: NextRequest) {
         if (externalReference) {
           // Verify it exists first
           const appointment = await prisma.appointment.findUnique({
-            where: { id: externalReference }
+            where: { id: externalReference },
+            include: { patient: true }
           });
 
           if (appointment && appointment.status === 'PENDING') {
@@ -34,6 +38,30 @@ export async function POST(request: NextRequest) {
               }
             });
             console.log(`Appointment ${externalReference} confirmed via webhook.`);
+            console.log('Patient Info:', {
+              email: appointment.patient?.email,
+              name: appointment.patient?.name,
+              datetime: appointment.datetime
+            });
+
+            if (appointment.patient && appointment.patient.email) {
+                const formattedDate = format(appointment.datetime, "EEEE d 'de' MMMM", { locale: es });
+                const formattedTime = format(appointment.datetime, 'HH:mm', { locale: es });
+                
+                console.log('Sending email to:', appointment.patient.email);
+                const emailResult = await sendConfirmationEmail(
+                    appointment.patient.email,
+                    appointment.patient.name || 'Paciente',
+                    formattedDate,
+                    formattedTime
+                );
+                console.log('Email Result:', emailResult);
+            } else {
+                console.warn('Cannot send email: Patient or Email missing', { 
+                  hasPatient: !!appointment.patient, 
+                  hasEmail: !!appointment.patient?.email 
+                });
+            }
           }
         }
       }
