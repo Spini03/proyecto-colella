@@ -4,7 +4,7 @@ Plataforma integral para gestión de turnos, historia clínica y landing page de
 
 ## 🛠 Tech Stack
 
-- **Frontend:** Next.js 14+ (App Router), Tailwind CSS, Shadcn UI, Framer Motion.
+- **Frontend:** Next.js 16 (Turbopack), Tailwind CSS, Shadcn UI, Framer Motion.
 - **Backend:** Server Actions, Prisma ORM.
 - **Database:** PostgreSQL (Servidor Remoto).
 - **Auth:** Auth.js (v5) + Google OAuth.

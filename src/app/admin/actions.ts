@@ -50,7 +50,7 @@ export async function getAppointments(startDate?: string, endDate?: string) {
   })
   
   // Serialize dates
-  return appointments.map(app => ({
+  return appointments.map((app:any) => ({
     ...app,
     datetime: app.datetime.toISOString(),
     createdAt: app.createdAt.toISOString(),

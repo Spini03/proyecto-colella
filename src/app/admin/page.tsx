@@ -6,7 +6,7 @@ import { Calendar, User, Clock, Phone, Mail, CheckCircle, AlertCircle, Clock3 } 
 export default async function AdminDashboard() {
   const appointments = await getAppointments()
   
-  const grouped = appointments.reduce((acc, app) => {
+  const grouped = appointments.reduce((acc: any, app: any) => {
     const dateStr = format(parseISO(app.datetime), 'yyyy-MM-dd')
     if (!acc[dateStr]) acc[dateStr] = []
     acc[dateStr].push(app)
@@ -53,7 +53,7 @@ export default async function AdminDashboard() {
                     </div>
 
                     <div className="bg-white dark:bg-neutral-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-neutral-800 overflow-hidden divide-y dark:divide-neutral-800">
-                        {grouped[dateStr].sort((a,b) => a.datetime.localeCompare(b.datetime)).map(app => (
+                        {grouped[dateStr].sort((a: any, b: any) => a.datetime.localeCompare(b.datetime)).map((app: any) => (
                             <div key={app.id} className="group p-6 sm:px-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 hover:bg-teal-50/30 dark:hover:bg-teal-900/5 transition-all">
                                 <div className="flex gap-6 items-center">
                                     <div className="flex flex-col items-center justify-center bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300 rounded-2xl w-20 h-20 shrink-0 border border-teal-100/50 dark:border-teal-800/30 group-hover:scale-105 transition-transform shadow-sm">

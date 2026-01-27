@@ -57,7 +57,7 @@ async function getSystemConfig(targetDate?: Date) {
     } else {
         // Standard Weekly Schedule
         const dbSchedule = await prisma.workSchedule.findMany({ where: { isActive: true } })
-        dbSchedule.forEach(s => {
+        dbSchedule.forEach((s: any) => {
             config.schedule[s.dayOfWeek] = {
                 startTime: s.startTime,
                 endTime: s.endTime
@@ -134,7 +134,7 @@ export async function getAvailability(dateStr: string) {
       // Assuming fixed duration slots aligned.
       // Better: check if slotDate overlaps with any appointment.
       // But assuming strict slots for now based on current logic.
-      return !existingAppointments.some(app => isEqual(app.datetime, slotDate))
+      return !existingAppointments.some((app: any) => isEqual(app.datetime, slotDate))
   }
 
   const slots = []
@@ -219,7 +219,7 @@ export async function bookAppointment(formData: FormData) {
      const bookingDate = new Date(date);
 
      // Transaction: Check availability + Create Appointment atomically
-     const appointment = await prisma.$transaction(async (tx) => {
+     const appointment = await prisma.$transaction(async (tx: any) => {
         // 1. Strict Availability Check
         // Find any appointment at this EXACT time that is NOT cancelled
         const existing = await tx.appointment.findFirst({
