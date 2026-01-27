@@ -28,6 +28,7 @@ model User {
   
   // Custom fields
   phoneNumber   String?         @unique // Made optional for initial Google Auth
+  telegramId    String?         @unique
   role          Role            @default(PATIENT)
   
   createdAt     DateTime        @default(now())
