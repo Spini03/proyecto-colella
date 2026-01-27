@@ -14,12 +14,12 @@ export default async function SettingsPage() {
       // sessionDuration is Int
   }
   
-  const serializedOverrides = overrides.map(ov => ({
+  const serializedOverrides = overrides.map((ov: any) => ({
       ...ov,
       date: ov.date 
   }))
 
-  const serializedBlockouts = blockoutDates.map(bd => ({
+  const serializedBlockouts = blockoutDates.map((bd: any) => ({
       ...bd,
       date: bd.date
   }))
