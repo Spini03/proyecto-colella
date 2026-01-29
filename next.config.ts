@@ -6,8 +6,8 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       allowedOrigins: [
-        'fedecolellsfisio.com',         
-        'www.fedecolellsfisio.com',     
+        'fedecolellafisio.com',         
+        'www.fedecolellafisio.com',     
         'bolectioned-pathognomonically-myrtie.ngrok-free.dev', 
         'localhost:3000'
       ]
