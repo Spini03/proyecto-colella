@@ -1,5 +1,7 @@
 'use client'
 
+import { toast } from "sonner"
+
 import { useState, useEffect } from 'react'
 import { DayPicker } from 'react-day-picker'
 import { format, startOfToday, parseISO } from 'date-fns'
@@ -144,7 +146,7 @@ export function BookingWidget() {
         setStep('confirmation')
       } else {
         if (res.error) {
-             alert(res.error) // Simple alert for specific errors like file size/type
+             toast.error(res.error)
         }
         setBookingStatus('error')
       }
@@ -433,7 +435,7 @@ export function BookingWidget() {
                                                  onChange={(e) => {
                                                      const file = e.target.files?.[0];
                                                      if (file && file.size > 5 * 1024 * 1024) {
-                                                         alert('El archivo es demasiado grande (Máx 5MB)');
+                                                         toast.error('El archivo es demasiado grande (Máx 5MB)');
                                                          e.target.value = '';
                                                      }
                                                  }}

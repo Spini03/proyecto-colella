@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { upsertSuccessStory, deleteSuccessStory } from '../actions'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
+import { toast } from "sonner"
 
 interface Story {
   id: string
@@ -45,7 +46,7 @@ export function SuccessStoriesManager({ initialStories }: { initialStories: Stor
   }
 
   const handleSave = async () => {
-    if (!formData.name || !formData.role) return alert('Nombre y Rol son obligatorios')
+    if (!formData.name || !formData.role) return toast.error('Nombre y Rol son obligatorios')
     
     await upsertSuccessStory({
         id: editingId || undefined,
