@@ -48,52 +48,54 @@ export function Header() {
         />
 
       <div className="mx-auto flex max-w-7xl items-center justify-between">
-        {/* Logo */}
-        <Link 
-          href="/" 
-          className="flex items-center gap-3 group relative z-50"
-          onClick={(e) => {
-            if (window.location.pathname === '/') {
-              e.preventDefault();
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-              setMobileMenuOpen(false);
-            }
-          }}
-        >
-          <div className="relative h-12 w-12 overflow-hidden rounded-md transition-transform group-hover:scale-105">
-            <Image
-              src="/assets/logo/iso_sobre_color.jpg"
-              alt="Logo Federico Colella"
-              fill
-              className="object-cover"
-            />
-          </div>
-          <span className={cn(
-            "text-xl font-bold tracking-tight font-display transition-colors",
-            "text-[var(--color-primary)]",
-             mobileMenuOpen ? "text-gray-900 dark:text-white" : ""
-          )}>
-            Federico Colella
-          </span>
-        </Link>
+        {/* Left Side: Logo + Admin Panel */}
+        <div className="flex items-center gap-6">
+            <Link 
+              href="/" 
+              className="flex items-center gap-3 group relative z-50"
+              onClick={(e) => {
+                if (window.location.pathname === '/') {
+                  e.preventDefault();
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  setMobileMenuOpen(false);
+                }
+              }}
+            >
+              <div className="relative h-12 w-12 overflow-hidden rounded-md transition-transform group-hover:scale-105">
+                <Image
+                  src="/assets/logo/iso_sobre_color.jpg"
+                  alt="Logo Federico Colella"
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <span className={cn(
+                "text-xl font-bold tracking-tight font-display transition-colors",
+                "text-[var(--color-primary)]",
+                 mobileMenuOpen ? "text-gray-900 dark:text-white" : ""
+              )}>
+                Federico Colella
+              </span>
+            </Link>
+
+            {isAdmin && (
+                 <Link href="/admin">
+                   <Button variant="ghost" size="sm" className="text-sm font-bold text-gray-500 hover:text-[var(--color-brand-primary)] hover:bg-[var(--color-brand-accent)] transition-colors">
+                     Panel Admin
+                   </Button>
+                 </Link>
+            )}
+        </div>
 
         {/* Desktop Navigation */}
-        <nav className="hidden items-center gap-8 md:flex">
-          {session && (
-             <button 
-               onClick={() => signOut()}
-               className="text-xs font-medium text-gray-400 hover:text-red-500 transition-colors"
-             >
-               Cerrar Sesión
-             </button>
-          )}
-          {isAdmin && (
-             <Link href="/admin">
-               <Button variant="ghost" size="sm" className="text-sm font-bold text-gray-500 hover:text-[var(--color-brand-primary)] hover:bg-[var(--color-brand-accent)] transition-colors">
-                 Panel Admin
-               </Button>
-             </Link>
-          )}
+        <nav className="hidden items-center gap-6 md:flex">
+          <Link 
+             href="/"
+             className="text-sm font-medium text-[var(--color-primary)] hover:text-[var(--color-brand-primary)] transition-colors"
+          >
+            Inicio
+          </Link>
+
           <button 
             onClick={() => scrollToSection('methodology')}
             className="text-sm font-medium text-[var(--color-primary)] hover:text-[var(--color-brand-primary)] transition-colors"
@@ -106,15 +108,24 @@ export function Header() {
           >
             Sobre Mí
           </button>
-          <Button 
-            variant="default" 
-            size="sm"
-            onClick={() => scrollToSection('booking')}
-            className="font-bold"
-          >
-            Reservar
-          </Button>
-          {!session && (
+          
+          {session && (
+              <Link
+                href="/dashboard/appointments"
+                className="text-sm font-medium text-[var(--color-primary)] hover:text-[var(--color-brand-primary)] transition-colors"
+              >
+                Mis Turnos
+              </Link>
+          )}
+
+          {session ? (
+             <button 
+               onClick={() => signOut()}
+               className="text-sm font-medium text-gray-400 hover:text-red-500 transition-colors"
+             >
+               Cerrar Sesión
+             </button>
+          ) : (
             <button 
               onClick={() => signIn('google')}
               className="text-sm font-medium text-gray-500 hover:text-[var(--color-brand-primary)] transition-colors"
@@ -122,6 +133,15 @@ export function Header() {
               Iniciar Sesión
             </button>
           )}
+
+          <Button 
+            variant="default" 
+            size="sm"
+            onClick={() => scrollToSection('booking')}
+            className="font-bold ml-2"
+          >
+            Reservar
+          </Button>
         </nav>
 
         {/* Mobile Menu Toggle */}
