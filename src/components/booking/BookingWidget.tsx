@@ -15,6 +15,7 @@ import { getAvailability, bookAppointment } from '@/app/actions'
 import { getPublicConfig } from '@/app/public-config' // New action
 import { cn } from '@/lib/utils'
 import { PhoneInput } from '@/components/ui/phone-input'
+import { BookingTimer } from './BookingTimer'
 
 import { isValidPhoneNumber, type Value } from 'react-phone-number-input'
 import { Checkbox } from "@/components/ui/checkbox"
@@ -42,6 +43,7 @@ export function BookingWidget() {
   const [phoneNumber, setPhoneNumber] = useState<Value>()
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [showTermsError, setShowTermsError] = useState(false)
+  const [isExpired, setIsExpired] = useState(false)
   
   // Dynamic Config State
   const [config, setConfig] = useState<{ price: number, duration: number, depositPercentage: number } | null>(null)
@@ -528,16 +530,30 @@ export function BookingWidget() {
                         
                         <div>
                           <h3 className="text-3xl font-bold mb-3 tracking-tight">¡Casi listo!</h3>
+                          <div className="flex justify-center mb-4">
+                            {!isExpired && (
+                                <BookingTimer 
+                                    durationMinutes={15} 
+                                    onExpire={() => setIsExpired(true)} 
+                                />
+                            )}
+                          </div>
                           <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto leading-relaxed">
                             Hemos reservado tu lugar temporalmente. Completá el pago de la seña para confirmar definitivamente tu turno.
                           </p>
                         </div>
                         
                         <div className="w-full space-y-4">
-                          {paymentUrl && (
+                          {paymentUrl && !isExpired && (
                               <Button size="lg" className="h-16 w-full text-lg font-bold rounded-2xl shadow-2xl shadow-green-500/20 bg-green-600 hover:bg-green-700 active:scale-95 transition-transform" onClick={() => window.open(paymentUrl, '_blank')}>
                                   Pagar Seña con Mercado Pago
                               </Button>
+                          )}
+                          
+                          {isExpired && (
+                              <div className="p-4 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 rounded-2xl text-red-600 dark:text-red-400 font-medium text-sm">
+                                  El tiempo de reserva ha expirado. Por favor, selecciona un horario nuevamente.
+                              </div>
                           )}
                            <Button variant="ghost" className="w-full text-gray-400 hover:text-gray-600 font-bold" onClick={() => {
                                setDate(undefined);

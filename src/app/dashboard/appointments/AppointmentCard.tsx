@@ -2,8 +2,8 @@
 
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { CalendarIcon, Clock } from "lucide-react"
-import { format } from "date-fns"
+import { CalendarIcon, Clock, CreditCard, RefreshCw } from "lucide-react"
+import { format, addMinutes, isBefore } from "date-fns"
 import { es } from "date-fns/locale"
 import { Button } from "@/components/ui/button"
 import {
@@ -19,12 +19,15 @@ import {
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
 import { cancelAppointment } from "./actions"
+import { getAppointmentPaymentUrl } from "@/app/actions"
 import { useState } from "react"
+import { cn } from "@/lib/utils"
 
 interface Appointment {
   id: string
   datetime: Date
   status: 'PENDING' | 'CONFIRMED' | 'CANCELLED'
+  createdAt: Date
 }
 
 interface AppointmentCardProps {
@@ -33,13 +36,23 @@ interface AppointmentCardProps {
 
 export function AppointmentCard({ appointment }: AppointmentCardProps) {
   const [isCancelling, setIsCancelling] = useState(false)
+  const [isPaying, setIsPaying] = useState(false)
+
+  // Calculate Expiration
+  // 15 minutes TTL
+  const RESERVATION_TIMEOUT_MINUTES = 15
+  const expirationTime = addMinutes(new Date(appointment.createdAt), RESERVATION_TIMEOUT_MINUTES)
+  const isExpired = appointment.status === 'PENDING' && isBefore(expirationTime, new Date())
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'CONFIRMED':
         return <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200">Confirmado</Badge>
       case 'PENDING':
-        return <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100 border-yellow-200">Pendiente</Badge>
+        if (isExpired) {
+            return <Badge variant="outline" className="text-gray-400 border-gray-200 bg-gray-50">Vencido</Badge>
+        }
+        return <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100 border-yellow-200 animate-pulse">Pendiente de Pago</Badge>
       case 'CANCELLED':
         return <Badge variant="destructive">Cancelado</Badge>
       default:
@@ -59,22 +72,28 @@ export function AppointmentCard({ appointment }: AppointmentCardProps) {
     }
   }
 
-  const isCancellable = (appointment.status === 'PENDING' || appointment.status === 'CONFIRMED') && new Date(appointment.datetime) > new Date()
+  const handlePayment = async () => {
+      setIsPaying(true)
+      const res = await getAppointmentPaymentUrl(appointment.id)
+      setIsPaying(false)
+      
+      if (res.success && res.url) {
+          window.open(res.url, '_blank')
+      } else {
+          toast.error(res.error || "Error al generar el link de pago")
+      }
+  }
 
-  // Logic to show button only if it is cancellable (future and active)
-  // BUT the policy logic (24h) is handled in the backend. 
-  // However, for UX, maybe we should also disable or hide if < 24h?
-  // User request said: "Si faltan MENOS de 24 horas para el turno: NO permitir cancelar y devolver un error informativo".
-  // This implies the button IS clickeable or at least visible, and the error comes from backend?
-  // Or maybe we should improve UX by disabling it?
-  // Request said: "En la tarjeta de cada turno (solo si el estado es PENDING o CONFIRMED y la fecha es futura), agrega un botón "Cancelar"."
-  // So I'll follow that literally. 
+  const isCancellable = (appointment.status === 'PENDING' || appointment.status === 'CONFIRMED') && new Date(appointment.datetime) > new Date() && !isExpired
 
   return (
-    <Card className="overflow-hidden bg-white dark:bg-neutral-900 border-gray-100 dark:border-neutral-800 hover:shadow-md transition-shadow">
+    <Card className={cn(
+        "overflow-hidden bg-white dark:bg-neutral-900 border-gray-100 dark:border-neutral-800 transition-shadow",
+        isExpired ? "opacity-60 grayscale-[0.5]" : "hover:shadow-md"
+    )}>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 gap-4">
         <div className="flex items-start gap-4">
-          <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg text-blue-600 dark:text-blue-400">
+          <div className={cn("p-3 rounded-lg", isExpired ? "bg-gray-100 text-gray-400" : "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400")}>
             <CalendarIcon className="w-6 h-6" />
           </div>
           <div>
@@ -87,38 +106,51 @@ export function AppointmentCard({ appointment }: AppointmentCardProps) {
             </p>
           </div>
         </div>
-        <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
+        <div className="flex flex-col items-end gap-3 w-full sm:w-auto">
           <div className="flex items-center gap-4 justify-between w-full sm:w-auto sm:justify-end">
              {getStatusBadge(appointment.status)}
-             <p className="text-xs text-gray-400 font-mono hidden sm:block">ID: {appointment.id.slice(-4)}</p>
           </div>
           
-          {isCancellable && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm" className="w-full sm:w-auto">
-                  Cancelar Turno
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>¿Estás seguro de cancelar este turno?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Ten en cuenta que las cancelaciones deben realizarse con al menos 24 horas de anticipación para no perder la seña. Esta acción es irreversible.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Volver</AlertDialogCancel>
-                  <AlertDialogAction 
-                    onClick={handleCancel}
-                    className="bg-red-600 hover:bg-red-700 focus:ring-red-600 text-white"
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              {appointment.status === 'PENDING' && !isExpired && (
+                  <Button 
+                    size="sm" 
+                    className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
+                    onClick={handlePayment}
+                    disabled={isPaying}
                   >
-                    {isCancelling ? "Cancelando..." : "Sí, Cancelar Turno"}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
+                      {isPaying ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
+                      Pagar Seña
+                  </Button>
+              )}
+
+              {isCancellable && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="w-full sm:w-auto text-red-500 hover:text-red-700 hover:bg-red-50 border-red-200">
+                      Cancelar
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>¿Estás seguro de cancelar este turno?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Ten en cuenta que las cancelaciones deben realizarse con al menos 24 horas de anticipación para no perder la seña. Esta acción es irreversible.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Volver</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={handleCancel}
+                        className="bg-red-600 hover:bg-red-700 focus:ring-red-600 text-white"
+                      >
+                        {isCancelling ? "Cancelando..." : "Sí, Cancelar Turno"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+          </div>
         </div>
       </div>
     </Card>

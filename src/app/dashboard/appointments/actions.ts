@@ -36,6 +36,7 @@ export async function getUserAppointments() {
         id: true,
         datetime: true,
         status: true,
+        createdAt: true,
       },
       orderBy: {
         datetime: 'asc',

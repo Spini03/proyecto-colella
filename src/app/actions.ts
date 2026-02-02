@@ -4,8 +4,11 @@ import { prisma } from '@/lib/prisma'
 // import { BUSINESS_RULES } from '@/lib/config/business-rules' // Deprecated
 import { preference } from '@/lib/mercadopago'
 
-import { addDays, setHours, setMinutes, startOfDay, endOfDay, isBefore, addMinutes, format, parseISO, getDay, isEqual } from 'date-fns'
+import { addDays, setHours, setMinutes, startOfDay, endOfDay, isBefore, addMinutes, format, parseISO, getDay, isEqual, subMinutes } from 'date-fns'
 import { auth } from '@/auth'
+
+// CONSTANTS
+const RESERVATION_TIMEOUT_MINUTES = 15
 
 // Helper to fetch valid configuration
 async function getSystemConfig(targetDate?: Date) {
@@ -76,8 +79,7 @@ export async function getAvailability(dateStr: string) {
   // Ensure we are checking the "Business Day" which is stored as UTC Midnight
   // dateStr is usually YYYY-MM-DD
   const dateOnly = dateStr.split('T')[0] // safety
-  const utcDate = new Date(`${dateOnly}T00:00:00Z`)
-
+  
   // Check BlockoutDate - Search for exact match on UTC Midnight or range covering it?
   // Since we don't know if bot stores 00:00:00Z strictly, let's look for the record 
   // that represents this day. 
@@ -116,15 +118,23 @@ export async function getAvailability(dateStr: string) {
   const end = setMinutes(setHours(date, endHour), endMinute)
   
   // Find existing appointments to block slots
+  // MODIFIED: Filter out expired PENDING appointments
+  const now = new Date()
+  const expirationThreshold = subMinutes(now, RESERVATION_TIMEOUT_MINUTES)
+
   const existingAppointments = await prisma.appointment.findMany({
       where: {
           datetime: {
               gte: start,
               lt: end
           },
-          status: {
-              not: 'CANCELLED'
-          }
+          OR: [
+              { status: 'CONFIRMED' },
+              { 
+                  status: 'PENDING',
+                  createdAt: { gte: expirationThreshold } 
+              }
+          ]
       }
   })
 
@@ -225,12 +235,27 @@ export async function bookAppointment(formData: FormData) {
         const existing = await tx.appointment.findFirst({
             where: {
                 datetime: bookingDate,
-                status: { not: 'CANCELLED' }
+                status: { in: ['CONFIRMED', 'PENDING'] }
             }
         });
 
         if (existing) {
-            throw new Error('SLOT_TAKEN');
+            // Check if it's an expired PENDING appointment
+            const isPending = existing.status === 'PENDING'
+            const now = new Date()
+            const expirationThreshold = subMinutes(now, RESERVATION_TIMEOUT_MINUTES)
+            const isExpired = existing.createdAt < expirationThreshold
+
+            if (isPending && isExpired) {
+                // Determine it as CANCELLED and proceed
+                await tx.appointment.update({
+                    where: { id: existing.id },
+                    data: { status: 'CANCELLED' }
+                })
+            } else {
+                // It is either CONFIRMED or a FRESH PENDING
+                throw new Error('SLOT_TAKEN');
+            }
         }
 
         // 2. Check Blockouts (Manual Blocks)
@@ -265,49 +290,14 @@ export async function bookAppointment(formData: FormData) {
         });
      });
      
-     // Create Mercado Pago Preference (Outside Transaction)
-     const appUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || process.env.AUTH_URL || 'http://localhost:3000';
+     // Create Mercado Pago Preference (Outside Transaction or inside? usually outside is safer for latency)
+     // BUT, we need to return the URL.
      
-     const preferenceBody = {
-        items: [
-            {
-                id: 'deposit',
-                title: `Seña: Sesión de Kinesiología`,
-                quantity: 1,
-                unit_price: depositAmount,
-                currency_id: 'ARS',
-            }
-        ],
-        payer: {
-            email: session.user.email || 'unknown@email.com',
-            name: name
-        },
-        external_reference: appointment.id,
-        back_urls: {
-            success: `${appUrl}/booking/success`,
-            failure: `${appUrl}/booking/failure`,
-            pending: `${appUrl}/booking/pending`
-        },
-        notification_url: `${appUrl}/api/webhooks/mercadopago`,
-        metadata: {
-            appointment_id: appointment.id
-        }
-     };
-
-     const preferenceResponse = await preference.create({
-        body: preferenceBody
-     });
-
-     if (!preferenceResponse.init_point) {
-        // If MP fails, we might want to cancel the appointment we just created?
-        // Or leave it as PENDING and let a cleanup job handle it / let user retry payment.
-        // For now, throwing error.
-        throw new Error('Failed to create payment preference');
-     }
+     const paymentUrl = await createPreferenceForAppointment(appointment, name, session.user.email, depositAmount)
      
      return { 
        success: true, 
-       paymentUrl: preferenceResponse.init_point 
+       paymentUrl: paymentUrl
      }
 
   } catch (error: any) {
@@ -323,4 +313,86 @@ export async function bookAppointment(formData: FormData) {
 
       return { success: false, error: 'Booking failed. Please try again.' }
   }
+}
+
+// Separate helper for creating preference
+async function createPreferenceForAppointment(appointment: any, payerName: string, payerEmail: string | null | undefined, amount: number) {
+     const appUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || process.env.AUTH_URL || 'http://localhost:3000';
+     
+     const preferenceBody = {
+        items: [
+            {
+                id: 'deposit',
+                title: `Seña: Sesión de Kinesiología`,
+                quantity: 1,
+                unit_price: amount,
+                currency_id: 'ARS',
+            }
+        ],
+        payer: {
+            email: payerEmail || 'unknown@email.com',
+            name: payerName
+        },
+        external_reference: appointment.id,
+        back_urls: {
+            success: `${appUrl}/booking/success`,
+            failure: `${appUrl}/booking/failure`,
+            pending: `${appUrl}/booking/pending`
+        },
+        notification_url: `${appUrl}/api/webhooks/mercadopago`,
+        metadata: {
+            appointment_id: appointment.id
+        },
+        expires: true, // Optional: MP expiration? We handled logic ourselves.
+        // expiration_date_to: addMinutes(new Date(), 15).toISOString() // Optional: We could align MP preference expiration too.
+     };
+
+     const preferenceResponse = await preference.create({
+        body: preferenceBody
+     });
+
+     if (!preferenceResponse.init_point) {
+        throw new Error('Failed to create payment preference');
+     }
+     
+     return preferenceResponse.init_point;
+}
+
+// NEW EXPORT: Generate Payment URL for existing PENDING appointment
+export async function getAppointmentPaymentUrl(appointmentId: string) {
+    const session = await auth()
+    if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
+
+    const appointment = await prisma.appointment.findUnique({
+        where: { id: appointmentId },
+        include: { patient: true }
+    })
+
+    if (!appointment) return { success: false, error: 'Appointment not found' }
+    
+    // Security check: only own appointments
+    if (appointment.patientId !== session.user.id) {
+         return { success: false, error: 'Unauthorized' }
+    }
+
+    if (appointment.status !== 'PENDING') {
+         return { success: false, error: 'Appointment is not pending' }
+    }
+
+    // Check expiration
+    const now = new Date()
+    const expirationThreshold = subMinutes(now, RESERVATION_TIMEOUT_MINUTES)
+    if (appointment.createdAt < expirationThreshold) {
+         return { success: false, error: 'Appointment expired' }
+    }
+
+    const config = await getSystemConfig()
+    const depositAmount = config.price * (config.depositPercentage / 100);
+    
+    try {
+        const url = await createPreferenceForAppointment(appointment, appointment.patient.name || 'Paciente', appointment.patient.email, depositAmount)
+        return { success: true, url }
+    } catch (e) {
+        return { success: false, error: 'Failed to generate payment link' }
+    }
 }
