@@ -15,6 +15,8 @@ import {
 import { LogoutButton } from "./LogoutButton"
 import { AdminMobileNav } from "./AdminMobileNav"
 
+import logoIso from "../../../public/assets/logo/iso_sobre_color.jpg"
+
 export default async function AdminLayout({
   children,
 }: {
@@ -40,7 +42,7 @@ export default async function AdminLayout({
           <Link href="/admin" className="flex items-center gap-4 group transition-transform hover:scale-[1.02]">
              <div className="relative h-11 w-11 overflow-hidden rounded-xl bg-white p-1.5 shadow-inner">
                 <Image
-                  src="/assets/logo/iso_sobre_color.jpg"
+                  src={logoIso}
                   alt="Logo"
                   fill
                   className="object-cover"

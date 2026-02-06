@@ -1,6 +1,5 @@
-
-import 'dotenv/config'
-import { prisma } from '../src/lib/prisma'
+import { PrismaClient } from '@prisma/client'
+const prisma = new PrismaClient()
 
 async function main() {
   console.log('Start seeding...')
@@ -16,7 +15,7 @@ async function main() {
     create: {
       id: 'settings',
       currentPrice: 30000,
-      sessionDuration: 50,
+      sessionDuration: 30,
       depositPercentage: 50,
     },
   })
