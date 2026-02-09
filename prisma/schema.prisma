@@ -91,6 +91,8 @@ model Appointment {
   patientNotes     String?
   medicalReportUrl String?
   
+  reminder_level   Int      @default(0)
+
   patientId   String
   patient     User     @relation(fields: [patientId], references: [id])
 

@@ -3,7 +3,7 @@ import { MessageCircle } from 'lucide-react'
 export function WhatsAppFloatingButton() {
   return (
     <a
-      href="https://wa.me/5491100000000?text=Hola,%20me%20gustaría%20agendar%20una%20sesión."
+      href="https://wa.me/5493416619005?text=Hola,%20me%20gustaría%20agendar%20una%20sesión."
       target="_blank"
       rel="noopener noreferrer"
       className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-[#25D366] px-4 py-3 text-white shadow-lg transition-transform hover:scale-110 hover:shadow-xl dark:bg-[#25D366]"
