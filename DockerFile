@@ -12,6 +12,11 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+ARG MERCADO_PAGO_ACCESS_TOKEN
+ARG RESEND_API_KEY
+ENV MERCADO_PAGO_ACCESS_TOKEN=${MERCADO_PAGO_ACCESS_TOKEN}
+ENV RESEND_API_KEY=${RESEND_API_KEY}
+
 RUN npx prisma generate
 
 # Genera la carpeta .next/standalone
