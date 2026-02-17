@@ -415,7 +415,7 @@ export function BookingWidget() {
                                    <PhoneInput
                                      name="phone"
                                      value={phoneNumber}
-                                     onChange={(val) => {
+                                     onChange={(val: Value) => {
                                          setPhoneNumber(val);
                                          if (errors.phone) setErrors(prev => ({ ...prev, phone: undefined }));
                                      }}
