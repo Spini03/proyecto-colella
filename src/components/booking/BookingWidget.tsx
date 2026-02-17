@@ -48,6 +48,7 @@ export function BookingWidget() {
   const [isExpired, setIsExpired] = useState(false)
   
   // Dynamic Config State
+  const [errors, setErrors] = useState<{ name?: string, phone?: string }>({})
   const [config, setConfig] = useState<{ price: number, duration: number, depositPercentage: number } | null>(null)
 
   useEffect(() => {
@@ -121,23 +122,35 @@ export function BookingWidget() {
     setShowTermsError(false)
 
     setBookingStatus('loading')
-    const formData = new FormData(e.currentTarget)
+    setErrors({})
     
-    // Validate phone number
-    if (phoneNumber && !isValidPhoneNumber(phoneNumber)) {
-        setBookingStatus('error')
+    const formData = new FormData(e.currentTarget)
+    const name = formData.get('name') as string
+    const newErrors: { name?: string, phone?: string } = {}
+
+    // Validate Name
+    if (!name || name.trim() === '') {
+        newErrors.name = 'Por favor, ingresá tu nombre'
+    }
+
+    // Validate Phone
+    if (!phoneNumber) {
+        newErrors.phone = 'Por favor, ingresá tu celular'
+    } else if (!isValidPhoneNumber(phoneNumber)) {
+        newErrors.phone = 'El formato del teléfono es incorrecto'
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors)
+        setBookingStatus('idle')
         return
     }
 
-    // Append standard fields that might be missing or need formatting
-    // Note: 'name' and 'patientNotes' and 'medicalFile' are already in formData from the form
-    // We just need to ensure 'phone' is the formatted one and 'date' is added
-    formData.set('phone', phoneNumber || (formData.get('phone') as string))
+    // Append standard fields
+    formData.set('phone', phoneNumber as string)
     formData.set('date', selectedSlot)
 
     try {
-      // Create a simplified version of formData to pass to server action if needed, 
-      // but bookAppointment now accepts FormData directly!
       const res = await bookAppointment(formData)
       
       if (res.success) {
@@ -363,29 +376,63 @@ export function BookingWidget() {
                          </header>
                          
                          <form onSubmit={handleBooking} className="flex flex-col gap-6">
-                             <div className="space-y-3">
-                                 <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Nombre Completo</label>
+                              <div className="space-y-3">
+                                 <label className={cn(
+                                     "block text-xs font-black uppercase tracking-widest transition-colors",
+                                     errors.name ? "text-red-500" : "text-gray-400"
+                                 )}>
+                                     Nombre Completo
+                                 </label>
                                  <div className="relative">
                                    <input 
                                      required 
                                      name="name" 
                                      defaultValue={session?.user?.name || ''}
-                                     className="w-full p-4 bg-white dark:bg-black/20 border border-gray-100 dark:border-neutral-800 rounded-2xl focus:ring-2 ring-[var(--color-brand-primary)] focus:bg-transparent dark:focus:bg-black/40 outline-none transition-all focus:shadow-lg"
+                                     onChange={() => { if (errors.name) setErrors(prev => ({ ...prev, name: undefined })) }}
+                                     className={cn(
+                                         "w-full p-4 bg-white dark:bg-black/20 border rounded-2xl focus:ring-2 outline-none transition-all focus:shadow-lg",
+                                         errors.name 
+                                             ? "border-red-500 focus:ring-red-500 bg-red-50/50 dark:bg-red-500/5" 
+                                             : "border-gray-100 dark:border-neutral-800 focus:ring-[var(--color-brand-primary)] focus:bg-transparent dark:focus:bg-black/40"
+                                     )}
                                      placeholder="Juan Pérez" 
                                    />
+                                   {errors.name && (
+                                       <p className="text-[10px] font-bold text-red-500 mt-1.5 ml-1 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">
+                                           {errors.name}
+                                       </p>
+                                   )}
                                  </div>
                              </div>
                              <div className="space-y-3">
-                                 <label className="block text-xs font-black uppercase tracking-widest text-gray-400">WhatsApp</label>
+                                 <label className={cn(
+                                     "block text-xs font-black uppercase tracking-widest transition-colors",
+                                     errors.phone ? "text-red-500" : "text-gray-400"
+                                 )}>
+                                     WhatsApp
+                                 </label>
                                  <div className="relative">
                                    <PhoneInput
                                      name="phone"
                                      value={phoneNumber}
-                                     onChange={setPhoneNumber}
+                                     onChange={(val) => {
+                                         setPhoneNumber(val);
+                                         if (errors.phone) setErrors(prev => ({ ...prev, phone: undefined }));
+                                     }}
                                      required
                                      placeholder="11 1234 5678"
-                                     className="bg-white dark:bg-black/20 border border-gray-100 dark:border-neutral-800 rounded-2xl focus-within:ring-2 ring-[var(--color-brand-primary)] transition-all focus-within:shadow-lg"
+                                     className={cn(
+                                         "bg-white dark:bg-black/20 border rounded-2xl focus-within:ring-2 transition-all focus-within:shadow-lg",
+                                         errors.phone 
+                                             ? "border-red-500 focus-within:ring-red-500 bg-red-50/50 dark:bg-red-500/5" 
+                                             : "border-gray-100 dark:border-neutral-800 focus-within:ring-[var(--color-brand-primary)]"
+                                     )}
                                    />
+                                   {errors.phone && (
+                                       <p className="text-[10px] font-bold text-red-500 mt-1.5 ml-1 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">
+                                           {errors.phone}
+                                       </p>
+                                   )}
                                  </div>
                              </div>
                              
