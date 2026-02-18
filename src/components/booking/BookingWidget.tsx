@@ -172,7 +172,7 @@ export function BookingWidget() {
   if (!config) return <div className="py-24 flex justify-center"><Loader2 className="animate-spin" /></div>
 
   return (
-    <section id="booking" className="py-24 bg-white dark:bg-[#0a0a0a]">
+    <section id="booking" className="py-24 bg-white dark:bg-transparent">
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold font-display mb-4 tracking-tight">Agendá tu Sesión</h2>

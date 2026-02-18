@@ -1,3 +1,5 @@
+import 'dotenv/config';
+
 // prisma.config.js
 export default {
   datasource: {

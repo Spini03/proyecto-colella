@@ -15,6 +15,7 @@ import {
 import { LogoutButton } from "./LogoutButton"
 import { AdminMobileNav } from "./AdminMobileNav"
 
+
 import logoIso from "../../../public/assets/logo/iso_sobre_color.jpg"
 
 export default async function AdminLayout({

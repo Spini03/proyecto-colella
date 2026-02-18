@@ -30,7 +30,7 @@ export function AboutSection() {
   }
 
   return (
-    <section id="about" className="py-24 bg-gradient-to-b from-gray-50 to-white dark:from-neutral-900 dark:to-[#0a0a0a]">
+    <section id="about" className="py-24 bg-gradient-to-b from-gray-50 to-white dark:bg-none">
       <div className="container mx-auto px-4 max-w-5xl">
         
         {/* Header */}

@@ -23,7 +23,7 @@ export function SuccessStories() {
   if (stories.length === 0) return null
 
   return (
-    <section className="relative bg-gradient-to-b from-white to-gray-50 py-20 dark:bg-neutral-900 dark:from-neutral-900 dark:to-neutral-900">
+    <section className="relative bg-gradient-to-b from-white to-gray-50 py-20 dark:bg-none">
       <div className="container mx-auto px-4">
         <h2 className="mb-12 text-center text-3xl font-bold font-display">
           Casos de Éxito

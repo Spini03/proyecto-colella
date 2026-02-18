@@ -11,7 +11,7 @@ export function HeroSection() {
   }
 
   return (
-    <section className="relative flex min-h-[90vh] flex-col items-center justify-center overflow-hidden px-4 md:px-8 bg-gradient-to-b from-white via-[var(--color-brand-accent)]/30 to-white dark:from-neutral-950 dark:via-[var(--color-brand-dark)]/10 dark:to-neutral-900 py-20">
+    <section className="relative flex min-h-[90vh] flex-col items-center justify-center overflow-hidden px-4 md:px-8 bg-gradient-to-b from-white via-[var(--color-brand-accent)]/30 to-white dark:bg-none py-20">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
