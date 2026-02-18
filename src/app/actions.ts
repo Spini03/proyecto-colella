@@ -71,21 +71,37 @@ async function getSystemConfig(targetDate?: Date) {
     return config
 }
 
+import { fromZonedTime, toZonedTime } from 'date-fns-tz'
+
+const TIMEZONE = 'America/Argentina/Buenos_Aires'
+
 export async function getAvailability(dateStr: string) {
-  const date = parseISO(dateStr)
-  const dayOfWeek = getDay(date)
+  // Input dateStr is UTC midnight from the calendar (e.g., 2023-10-27T00:00:00.000Z)
+  // We want to know what day of the week this is IN ARGENTINA.
+  // Actually, the calendar sends the date selected. If I select Oct 27, it sends Oct 27.
+  // Let's rely on the date string YYYY-MM-DD portion to be the "Target Day" in Argentina.
   
-  const config = await getSystemConfig(date)
-  // Ensure we are checking the "Business Day" which is stored as UTC Midnight
-  // dateStr is usually YYYY-MM-DD
-  const dateOnly = dateStr.split('T')[0] // safety
+  const dateOnly = dateStr.split('T')[0] // "YYYY-MM-DD"
   
-  // Check BlockoutDate - Search for exact match on UTC Midnight or range covering it?
-  // Since we don't know if bot stores 00:00:00Z strictly, let's look for the record 
-  // that represents this day. 
-  // Safest: Check range of that UTC day.
-  const startUtc = new Date(`${dateOnly}T00:00:00Z`)
-  const endUtc = new Date(`${dateOnly}T23:59:59Z`)
+  // Create a Date object representing midnight in Argentina for that day
+  const targetDateZoned = fromZonedTime(`${dateOnly}T00:00:00`, TIMEZONE)
+  
+  const dayOfWeek = getDay(targetDateZoned) // 0-6 based on local time? No, getDay returns local day of week of the machine? 
+  // Wait, getDay(date) returns the day of week for the Date object. 
+  // If we want the day of week in Argentina, we should use toZonedTime.
+  
+  const zonedDate = toZonedTime(targetDateZoned, TIMEZONE)
+  const dayIndex = getDay(zonedDate) // correct day of week in Argentina
+  
+  const config = await getSystemConfig(targetDateZoned)
+  
+  // Check Blockout
+  // We check if the day is blocked. We can reuse the UTC check logic if we assume blocks are stored as UTC midnights, 
+  // OR we just check if the "YYYY-MM-DD" matches a blocked date's YYYY-MM-DD in Argentina.
+  // For now, let's stick to the existing logic but ensure we check the correct "day".
+  
+  const startUtc = fromZonedTime(`${dateOnly}T00:00:00`, TIMEZONE)
+  const endUtc = fromZonedTime(`${dateOnly}T23:59:59.999`, TIMEZONE)
   
   const blockout = await prisma.blockoutDate.findFirst({
       where: { 
@@ -100,25 +116,29 @@ export async function getAvailability(dateStr: string) {
       return { slots: [] }
   }
 
-  const daySchedule = config.schedule[dayOfWeek]
+  const daySchedule = config.schedule[dayIndex]
 
-  // Check if fully blocked via BlockoutDate (legacy/manual blocks)
-  // Or if no schedule for this day
   if (!daySchedule) {
-     // Check if it was explicitly blocked? 
-     // We assume if no schedule in map, it's off.
      return { slots: [] }
   }
 
   // Parse start/end times "HH:mm"
   const [startHour, startMinute] = daySchedule.startTime.split(':').map(Number)
   const [endHour, endMinute] = daySchedule.endTime.split(':').map(Number)
-
-  const start = setMinutes(setHours(date, startHour), startMinute)
-  const end = setMinutes(setHours(date, endHour), endMinute)
   
-  // Find existing appointments to block slots
-  // MODIFIED: Filter out expired PENDING appointments
+  // Construct absolute start/end times for the slots IN TIMEZONE
+  // If schedule says 08:00, it means 08:00 Argentina Time.
+  // So we construct string "YYYY-MM-DDT08:00" and parse it as zoned time.
+  
+  const formatTime = (h: number, m: number) => `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+  
+  const startTimeStr = `${dateOnly}T${formatTime(startHour, startMinute)}`
+  const endTimeStr = `${dateOnly}T${formatTime(endHour, endMinute)}`
+  
+  const start = fromZonedTime(startTimeStr, TIMEZONE)
+  const end = fromZonedTime(endTimeStr, TIMEZONE)
+  
+  // Find existing appointments
   const now = new Date()
   const expirationThreshold = subMinutes(now, RESERVATION_TIMEOUT_MINUTES)
 
@@ -138,12 +158,7 @@ export async function getAvailability(dateStr: string) {
       }
   })
 
-  // Helper to check collision
   const isSlotFree = (slotDate: Date) => {
-      // Simple check: is there an appointment at this time?
-      // Assuming fixed duration slots aligned.
-      // Better: check if slotDate overlaps with any appointment.
-      // But assuming strict slots for now based on current logic.
       return !existingAppointments.some((app: any) => isEqual(app.datetime, slotDate))
   }
 
@@ -151,7 +166,6 @@ export async function getAvailability(dateStr: string) {
   let current = start
   
   while (isBefore(current, end)) {
-    // Only add if free
     if (isSlotFree(current)) {
         slots.push(current.toISOString())
     }
@@ -259,9 +273,28 @@ export async function bookAppointment(formData: FormData) {
         }
 
         // 2. Check Blockouts (Manual Blocks)
-        // Check if the specific Day is blocked out
+        // Check if the specific Day is blocked out IN ARGENTINA
+        const bookingDateZoned = toZonedTime(bookingDate, TIMEZONE)
+        // We need to find if there is a blockout for this "Day"
+        // Blockouts are stored as simple Dates (likely 00:00 UTC).
+        // Let's use the same Range check as getAvailability to be safe.
+        
+        // derived "day" string
+        const year = bookingDateZoned.getFullYear()
+        const month = String(bookingDateZoned.getMonth() + 1).padStart(2, '0')
+        const day = String(bookingDateZoned.getDate()).padStart(2, '0')
+        const dateOnly = `${year}-${month}-${day}`
+        
+        const startUtc = fromZonedTime(`${dateOnly}T00:00:00`, TIMEZONE)
+        const endUtc = fromZonedTime(`${dateOnly}T23:59:59.999`, TIMEZONE)
+
         const blockout = await tx.blockoutDate.findFirst({
-             where: { date: startOfDay(bookingDate) }
+             where: { 
+                 date: {
+                     gte: startUtc,
+                     lte: endUtc
+                 }
+             }
         });
         
         if (blockout) {
