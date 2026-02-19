@@ -191,6 +191,7 @@ export async function bookAppointment(formData: FormData) {
   const name = formData.get('name') as string
   const phone = formData.get('phone') as string
   const date = formData.get('date') as string
+  const type = formData.get('type') as string || 'PRESENTIAL'
   const patientNotes = formData.get('patientNotes') as string | null
   const medicalFile = formData.get('medicalFile') as File | null
 
@@ -315,17 +316,19 @@ export async function bookAppointment(formData: FormData) {
             data: {
                 datetime: bookingDate,
                 status: 'PENDING',
+                type: type as any,
                 patientId: userId,
                 depositPaid: false,
                 patientNotes: patientNotes || null,
                 medicalReportUrl: medicalReportUrl
+            },
+            include: {
+                patient: true
             }
         });
      });
      
-     // Create Mercado Pago Preference (Outside Transaction or inside? usually outside is safer for latency)
-     // BUT, we need to return the URL.
-     
+     // Create Mercado Pago Preference
      const paymentUrl = await createPreferenceForAppointment(appointment, name, session.user.email, depositAmount)
      
      

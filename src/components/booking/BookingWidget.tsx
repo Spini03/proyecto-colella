@@ -7,7 +7,7 @@ import { DayPicker } from 'react-day-picker'
 import { format, startOfToday, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Loader2, Calendar as CalendarIcon, Clock, User, CheckCircle2, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Loader2, Calendar as CalendarIcon, Clock, User, CheckCircle2, AlertTriangle, ChevronLeft, ChevronRight, MapPin, Video } from 'lucide-react'
 import { useSession, signIn } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 
@@ -47,6 +47,7 @@ export function BookingWidget() {
   const [showTermsError, setShowTermsError] = useState(false)
   const [isExpired, setIsExpired] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
+  const [appointmentType, setAppointmentType] = useState<'PRESENTIAL' | 'VIRTUAL'>('PRESENTIAL')
   
   // Dynamic Config State
   const [errors, setErrors] = useState<{ name?: string, phone?: string }>({})
@@ -151,6 +152,7 @@ export function BookingWidget() {
     // Append standard fields
     formData.set('phone', phoneNumber as string)
     formData.set('date', selectedSlot)
+    formData.set('type', appointmentType)
 
     try {
       const res = await bookAppointment(formData)
@@ -378,6 +380,42 @@ export function BookingWidget() {
                          </header>
                          
                          <form onSubmit={handleBooking} className="flex flex-col gap-6">
+                              {/* Appointment Type Selector */}
+                              {isMounted && (
+                                <div className="space-y-3">
+                                  <label className="block text-xs font-black uppercase tracking-widest text-gray-400">
+                                      Tipo de Atención
+                                  </label>
+                                  <div className="grid grid-cols-2 gap-4">
+                                      <button
+                                          type="button"
+                                          onClick={() => setAppointmentType('PRESENTIAL')}
+                                          className={cn(
+                                              "p-4 rounded-2xl border transition-all flex flex-col items-center gap-2",
+                                              appointmentType === 'PRESENTIAL' 
+                                                  ? "border-teal-500 bg-teal-50 dark:bg-teal-900/10 text-teal-700 dark:text-teal-400" 
+                                                  : "border-gray-100 dark:border-neutral-800 text-gray-400 hover:border-gray-200 dark:hover:border-neutral-700"
+                                          )}
+                                      >
+                                          <MapPin className="w-5 h-5" />
+                                          <span className="text-xs font-bold uppercase tracking-wider">Presencial</span>
+                                      </button>
+                                      <button
+                                          type="button"
+                                          onClick={() => setAppointmentType('VIRTUAL')}
+                                          className={cn(
+                                              "p-4 rounded-2xl border transition-all flex flex-col items-center gap-2",
+                                              appointmentType === 'VIRTUAL' 
+                                                  ? "border-teal-500 bg-teal-50 dark:bg-teal-900/10 text-teal-700 dark:text-teal-400" 
+                                                  : "border-gray-100 dark:border-neutral-800 text-gray-400 hover:border-gray-200 dark:hover:border-neutral-700"
+                                          )}
+                                      >
+                                          <Video className="w-5 h-5" />
+                                          <span className="text-xs font-bold uppercase tracking-wider">Virtual</span>
+                                      </button>
+                                  </div>
+                                </div>
+                              )}
                               <div className="space-y-3">
                                  <label className={cn(
                                      "block text-xs font-black uppercase tracking-widest transition-colors",

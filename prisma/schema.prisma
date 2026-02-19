@@ -17,6 +17,11 @@ enum AppointmentStatus {
   CANCELLED
 }
 
+enum AppointmentType {
+  PRESENTIAL
+  VIRTUAL
+}
+
 model User {
   id            String          @id @default(cuid())
   name          String?
@@ -83,6 +88,7 @@ model Appointment {
   id          String            @id @default(cuid())
   datetime    DateTime
   status      AppointmentStatus @default(PENDING)
+  type        AppointmentType   @default(PRESENTIAL)
   depositPaid Boolean           @default(false)
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
@@ -90,6 +96,7 @@ model Appointment {
   // Medical Context
   patientNotes     String?
   medicalReportUrl String?
+  meetLink         String?
   
   reminder_level   Int      @default(0)
 
