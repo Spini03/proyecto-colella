@@ -78,7 +78,7 @@ export function Header() {
             </Link>
 
             {isAdmin && (
-                 <Link href="/admin">
+                 <Link href="/admin" className="hidden md:block">
                    <Button variant="ghost" size="sm" className="text-sm font-bold text-gray-400 hover:text-teal-400 hover:bg-teal-900/20 transition-colors">
                      Panel Admin
                    </Button>
