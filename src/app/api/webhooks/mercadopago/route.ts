@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { sendConfirmationEmail } from '@/lib/email';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { sendTelegramNotification } from '@/lib/notifications';
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,11 +57,24 @@ export async function POST(request: NextRequest) {
                     formattedTime
                 );
                 console.log('Email Result:', emailResult);
-            } else {
                 console.warn('Cannot send email: Patient or Email missing', { 
                   hasPatient: !!appointment.patient, 
                   hasEmail: !!appointment.patient?.email 
                 });
+            }
+
+            // --- Enviar Notificación a Telegram ---
+            if (appointment.patient) {
+                 // Fetch duration
+                 const settings = await prisma.globalSettings.findUnique({ where: { id: 'settings' } });
+                 const duration = settings?.sessionDuration || 30;
+
+                 sendTelegramNotification({
+                    patientName: appointment.patient.name || 'Sin Nombre',
+                    patientPhone: appointment.patient.phoneNumber || 'Sin Teléfono',
+                    datetime: appointment.datetime,
+                    durationMinutes: duration
+                 }).catch(error => console.error('Telegram Notification Error (Webhook):', error));
             }
           }
         }

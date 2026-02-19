@@ -328,6 +328,7 @@ export async function bookAppointment(formData: FormData) {
      
      const paymentUrl = await createPreferenceForAppointment(appointment, name, session.user.email, depositAmount)
      
+     
      return { 
        success: true, 
        paymentUrl: paymentUrl
