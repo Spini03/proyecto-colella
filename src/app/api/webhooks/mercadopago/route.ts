@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { payment } from '@/lib/mercadopago';
 import { prisma } from '@/lib/prisma';
-import { sendConfirmationEmail } from '@/lib/email';
+
 import { format, addMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toZonedTime } from 'date-fns-tz';
@@ -99,18 +99,7 @@ export async function POST(request: NextRequest) {
                 }).catch(err => console.error('n8n Webhook Error (MP Webhook):', err));
              }
 
-            if (freshAppointment.patient && freshAppointment.patient.email) {
-                const formattedDate = format(freshAppointment.datetime, "EEEE d 'de' MMMM", { locale: es });
-                const formattedTime = format(freshAppointment.datetime, 'HH:mm', { locale: es });
-                
-                console.log('Sending email to:', freshAppointment.patient.email);
-                await sendConfirmationEmail(
-                    freshAppointment.patient.email,
-                    freshAppointment.patient.name || 'Paciente',
-                    formattedDate,
-                    formattedTime
-                ).catch(e => console.error('Email Error:', e));
-            }
+
           }
         }
       }

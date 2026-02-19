@@ -19,7 +19,7 @@ export default function BookingSuccessPage() {
         
          <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-8">
             <p className="text-sm text-blue-800">
-                Se ha enviado un correo de confirmación a tu email con los detalles del turno.
+                ¡Listo! Te hemos enviado un mensaje de WhatsApp con todos los detalles de tu turno. Nos vemos pronto.
             </p>
         </div>
 
