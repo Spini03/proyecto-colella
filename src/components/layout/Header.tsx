@@ -43,7 +43,7 @@ export function Header() {
     >
         {/* Background Layer */}
         <motion.div 
-            className="absolute inset-0 bg-white/95 dark:bg-neutral-900/90 backdrop-blur-md shadow-sm -z-10"
+            className="absolute inset-0 bg-neutral-900/80 backdrop-blur-md shadow-sm -z-10 border-b border-white/5"
             style={{ opacity: bgOpacity }}
         />
 
@@ -70,9 +70,8 @@ export function Header() {
                 />
               </div>
               <span className={cn(
-                "text-xl font-bold tracking-tight font-display transition-colors",
-                "text-[var(--color-primary)]",
-                 mobileMenuOpen ? "text-gray-900 dark:text-white" : ""
+                "text-xl font-bold tracking-tight font-display transition-colors text-white",
+                 mobileMenuOpen ? "text-white" : ""
               )}>
                 Federico Colella
               </span>
@@ -80,7 +79,7 @@ export function Header() {
 
             {isAdmin && (
                  <Link href="/admin">
-                   <Button variant="ghost" size="sm" className="text-sm font-bold text-gray-500 hover:text-[var(--color-brand-primary)] hover:bg-[var(--color-brand-accent)] transition-colors">
+                   <Button variant="ghost" size="sm" className="text-sm font-bold text-gray-400 hover:text-teal-400 hover:bg-teal-900/20 transition-colors">
                      Panel Admin
                    </Button>
                  </Link>
@@ -91,20 +90,20 @@ export function Header() {
         <nav className="hidden items-center gap-6 md:flex">
           <Link 
              href="/"
-             className="text-sm font-medium text-[var(--color-primary)] hover:text-[var(--color-brand-primary)] transition-colors"
+             className="text-sm font-medium text-gray-300 hover:text-teal-400 transition-colors"
           >
             Inicio
           </Link>
 
           <button 
             onClick={() => scrollToSection('methodology')}
-            className="text-sm font-medium text-[var(--color-primary)] hover:text-[var(--color-brand-primary)] transition-colors"
+            className="text-sm font-medium text-gray-300 hover:text-teal-400 transition-colors"
           >
             La Metodología
           </button>
           <button 
             onClick={() => scrollToSection('about')}
-            className="text-sm font-medium text-[var(--color-primary)] hover:text-[var(--color-brand-primary)] transition-colors"
+            className="text-sm font-medium text-gray-300 hover:text-teal-400 transition-colors"
           >
             Sobre Mí
           </button>
@@ -112,7 +111,7 @@ export function Header() {
           {session && (
               <Link
                 href="/dashboard/appointments"
-                className="text-sm font-medium text-[var(--color-primary)] hover:text-[var(--color-brand-primary)] transition-colors"
+                className="text-sm font-medium text-gray-300 hover:text-teal-400 transition-colors"
               >
                 Mis Turnos
               </Link>
@@ -121,14 +120,14 @@ export function Header() {
           {session ? (
              <button 
                onClick={() => signOut()}
-               className="text-sm font-medium text-gray-400 hover:text-red-500 transition-colors"
+               className="text-sm font-medium text-gray-400 hover:text-red-400 transition-colors"
              >
                Cerrar Sesión
              </button>
           ) : (
             <button 
               onClick={() => signIn('google')}
-              className="text-sm font-medium text-gray-500 hover:text-[var(--color-brand-primary)] transition-colors"
+              className="text-sm font-medium text-gray-400 hover:text-teal-400 transition-colors"
             >
               Iniciar Sesión
             </button>
@@ -138,7 +137,7 @@ export function Header() {
             variant="default" 
             size="sm"
             onClick={() => scrollToSection('booking')}
-            className="font-bold ml-2"
+            className="font-bold ml-2 bg-teal-600 hover:bg-teal-700 text-white shadow-lg shadow-teal-500/20"
           >
             Reservar
           </Button>
@@ -150,13 +149,13 @@ export function Header() {
             variant="default" 
             size="sm"
             onClick={() => scrollToSection('booking')}
-            className={cn("font-bold text-xs px-4 h-9", mobileMenuOpen ? "hidden" : "flex")}
+            className={cn("font-bold text-xs px-4 h-9 bg-teal-600 hover:bg-teal-700 text-white", mobileMenuOpen ? "hidden" : "flex")}
           >
             Reservar
           </Button>
           <button 
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 text-gray-700 dark:text-gray-200"
+            className="p-2 text-white"
           >
              {mobileMenuOpen ? (
                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 18 12"/></svg>
@@ -174,14 +173,14 @@ export function Header() {
              initial={{ opacity: 0, height: 0 }}
              animate={{ opacity: 1, height: '100vh' }}
              exit={{ opacity: 0, height: 0 }}
-             className="fixed inset-0 top-0 left-0 w-full bg-white dark:bg-neutral-900 z-40 flex flex-col pt-28 px-6"
+             className="fixed inset-0 top-0 left-0 w-full bg-neutral-950/95 backdrop-blur-xl z-40 flex flex-col pt-28 px-6 border-b border-white/5"
           >
-             <nav className="flex flex-col gap-8 text-2xl font-bold font-display text-gray-800 dark:text-gray-100">
+             <nav className="flex flex-col gap-8 text-2xl font-bold font-display text-white">
                 {isAdmin && (
                    <Link 
                      href="/admin"
                      onClick={() => setMobileMenuOpen(false)}
-                     className="text-left border-b border-gray-100 dark:border-neutral-800 pb-4 text-[var(--color-brand-primary)]"
+                     className="text-left border-b border-white/10 pb-4 text-teal-400"
                    >
                      Panel Admin
                    </Link>
@@ -191,7 +190,7 @@ export function Header() {
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.1 }}
                   onClick={() => scrollToSection('methodology')}
-                  className="text-left border-b border-gray-100 dark:border-neutral-800 pb-4"
+                  className="text-left border-b border-white/10 pb-4 hover:text-teal-400 transition-colors"
                 >
                   La Metodología
                 </motion.button>
@@ -200,7 +199,7 @@ export function Header() {
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.2 }}
                   onClick={() => scrollToSection('about')}
-                  className="text-left border-b border-gray-100 dark:border-neutral-800 pb-4"
+                  className="text-left border-b border-white/10 pb-4 hover:text-teal-400 transition-colors"
                 >
                   Sobre Mí
                 </motion.button>
@@ -210,7 +209,7 @@ export function Header() {
                        signOut();
                        setMobileMenuOpen(false);
                      }}
-                     className="text-left border-b border-gray-100 dark:border-neutral-800 pb-4 text-red-500"
+                     className="text-left border-b border-white/10 pb-4 text-red-400 hover:text-red-300 transition-colors"
                    >
                      Cerrar Sesión
                    </button>
@@ -223,7 +222,7 @@ export function Header() {
                       signIn('google');
                       setMobileMenuOpen(false);
                     }}
-                    className="text-left border-b border-gray-100 dark:border-neutral-800 pb-4 text-gray-500 font-medium"
+                    className="text-left border-b border-white/10 pb-4 text-gray-400 font-medium hover:text-white transition-colors"
                   >
                     Iniciar Sesión
                   </motion.button>
@@ -236,7 +235,7 @@ export function Header() {
                 >
                    <Button 
                     size="lg"
-                    className="w-full text-lg h-14"
+                    className="w-full text-lg h-14 bg-teal-600 hover:bg-teal-700 text-white shadow-xl shadow-teal-500/20 rounded-2xl"
                     onClick={() => scrollToSection('booking')}
                   >
                     Agendá tu Sesión
