@@ -3,7 +3,6 @@ import { payment } from '@/lib/mercadopago';
 import { prisma } from '@/lib/prisma';
 
 import { format, addMinutes } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { toZonedTime } from 'date-fns-tz';
 
 const TIMEZONE = 'America/Argentina/Buenos_Aires';
@@ -43,7 +42,8 @@ export async function POST(request: NextRequest) {
                 },
                 data: {
                     status: 'CONFIRMED',
-                    depositPaid: true
+                    depositPaid: true,
+                    paymentId: String(dataId)
                 }
              });
 
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
              // SI LLEGAMOS AQUI, SOMOS EL PROCESO QUE CONFIRMÓ EL TURNO.
              // Solo nosotros disparamos n8n y emails.
-             console.log(`Atomic Update Success: Appointment ${externalReference} confirmed.`);
+             console.log(`Atomic Update Success: Appointment ${externalReference} confirmed. PaymentId: ${dataId}`);
              
              // Recargar datos actualizados (necesitamos patient include)
              const freshAppointment = await prisma.appointment.findUnique({
@@ -98,8 +98,6 @@ export async function POST(request: NextRequest) {
                     })
                 }).catch(err => console.error('n8n Webhook Error (MP Webhook):', err));
              }
-
-
           }
         }
       }
