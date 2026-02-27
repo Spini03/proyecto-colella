@@ -90,6 +90,7 @@ model Appointment {
   status      AppointmentStatus @default(PENDING)
   type        AppointmentType   @default(PRESENTIAL)
   depositPaid Boolean           @default(false)
+  paymentId   String?
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
   
