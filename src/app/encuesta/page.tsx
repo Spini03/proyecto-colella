@@ -26,19 +26,18 @@ function StarRating({ label, value, onChange }: { label: string; value: number; 
           </button>
         ))}
       </div>
-      {value > 0 && (
-        <p className="text-xs text-teal-400">{value}/10</p>
-      )}
+      {value > 0 && <p className="text-xs text-teal-400">{value}/10</p>}
     </div>
   )
 }
 
-export default function EncuestaPage() {
+export default function EncuestaPage({ searchParams }: { searchParams: { phone?: string } }) {
   const [atencion, setAtencion] = useState(0)
   const [recuperacion, setRecuperacion] = useState(0)
   const [servicio, setServicio] = useState(0)
   const [comentario, setComentario] = useState('')
   const [enviado, setEnviado] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   const total = atencion > 0 && recuperacion > 0 && servicio > 0
     ? Math.round((atencion + recuperacion + servicio) / 3 * 10) / 10
@@ -46,8 +45,25 @@ export default function EncuestaPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Acá podés conectar con una API route o n8n webhook
+    setLoading(true)
+    try {
+      await fetch('/api/encuesta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patientPhone: searchParams.phone || 'desconocido',
+          atencion,
+          recuperacion,
+          servicio,
+          total,
+          comentario
+        })
+      })
+    } catch (e) {
+      // silently fail — no queremos bloquear al usuario
+    }
     setEnviado(true)
+    setLoading(false)
   }
 
   if (enviado) {
@@ -74,7 +90,6 @@ export default function EncuestaPage() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-4 py-24">
       <div className="max-w-lg w-full space-y-8">
-        {/* Header */}
         <div className="text-center space-y-2">
           <p className="text-teal-400 text-sm font-medium uppercase tracking-wider">Post-sesión</p>
           <h1 className="text-3xl font-display font-bold text-white">¿Cómo fue tu experiencia?</h1>
@@ -83,24 +98,11 @@ export default function EncuestaPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-accent border border-border rounded-xl p-6 space-y-6">
-            <StarRating
-              label="¿Cómo fue la atención del Lic. Colella?"
-              value={atencion}
-              onChange={setAtencion}
-            />
+            <StarRating label="¿Cómo fue la atención del Lic. Colella?" value={atencion} onChange={setAtencion} />
             <div className="border-t border-border" />
-            <StarRating
-              label="¿Cómo fue tu recuperación o progreso?"
-              value={recuperacion}
-              onChange={setRecuperacion}
-            />
+            <StarRating label="¿Cómo fue tu recuperación o progreso?" value={recuperacion} onChange={setRecuperacion} />
             <div className="border-t border-border" />
-            <StarRating
-              label="¿Cómo calificás el servicio en general?"
-              value={servicio}
-              onChange={setServicio}
-            />
-
+            <StarRating label="¿Cómo calificás el servicio en general?" value={servicio} onChange={setServicio} />
             {total !== null && (
               <>
                 <div className="border-t border-border" />
@@ -112,7 +114,6 @@ export default function EncuestaPage() {
             )}
           </div>
 
-          {/* Comentario libre */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-muted-foreground">
               ¿Querés dejarnos algún comentario? <span className="text-xs">(opcional)</span>
@@ -128,10 +129,10 @@ export default function EncuestaPage() {
 
           <button
             type="submit"
-            disabled={atencion === 0 || recuperacion === 0 || servicio === 0}
+            disabled={atencion === 0 || recuperacion === 0 || servicio === 0 || loading}
             className="w-full py-3 rounded-lg bg-teal-600 hover:bg-teal-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium text-sm transition-colors"
           >
-            Enviar opinión
+            {loading ? 'Enviando...' : 'Enviar opinión'}
           </button>
         </form>
       </div>
