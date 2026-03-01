@@ -33,8 +33,8 @@ function AnimatedNumber({ target, duration = 1500 }: { target: number; duration?
 }
 
 const stats = [
-  { icon: '🏃', value: 150, suffix: '+', label: 'Pacientes recuperados' },
-  { icon: '📅', value: 500, suffix: '+', label: 'Sesiones realizadas' },
+  { icon: '🏃', value: 500, suffix: '+', label: 'Clientes recuperados' },
+  { icon: '📅', value: 1000, suffix: '+', label: 'Sesiones realizadas' },
   { icon: '⭐', value: 98, suffix: '%', label: 'Satisfacción de pacientes' },
   { icon: '🏆', value: 10, suffix: '+', label: 'Años de experiencia' },
 ]
