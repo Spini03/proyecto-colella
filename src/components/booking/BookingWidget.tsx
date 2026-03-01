@@ -596,6 +596,9 @@ export function BookingWidget() {
                                      {session?.user?.phoneNumber ? 'Confirmar Reserva' : 'Guardar y Reservar'}
                                  </Button>
                              </div>
+                             <div className="mx-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300/80 leading-relaxed">
+                               <span className="font-bold">⚠️ Pacientes menores de 18 años:</span> deben concurrir acompañados por un padre o tutor con DNI. El tutor deberá firmar el consentimiento informado al inicio de la primera sesión.
+                             </div>
                              <p className="text-[10px] text-center text-neutral-500/80 px-4 leading-relaxed italic">
                                 Al confirmar, serás redirigido para realizar el pago de la seña y asegurar tu lugar en la agenda.
                              </p>
