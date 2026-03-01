@@ -10,7 +10,9 @@ import {
   LayoutDashboard, 
   ArrowLeft,
   User,
-  Menu
+  Menu,
+  Users,
+  BarChart2
 } from "lucide-react"
 import { LogoutButton } from "./LogoutButton"
 import { AdminMobileNav } from "./AdminMobileNav"
@@ -31,6 +33,8 @@ export default async function AdminLayout({
 
   const navItems = [
     { href: "/admin", label: "Agenda del Día", icon: Calendar },
+    { href: "/admin/pacientes", label: "Pacientes", icon: Users },
+    { href: "/admin/stats", label: "Estadísticas Web", icon: BarChart2 },
     { href: "/admin/cms", label: "Casos de Éxito", icon: Star },
     { href: "/admin/settings", label: "Configuración General", icon: Settings },
   ]
@@ -106,4 +110,3 @@ export default async function AdminLayout({
     </div>
   )
 }
-
