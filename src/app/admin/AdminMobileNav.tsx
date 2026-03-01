@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Menu, X, Calendar, Star, Settings, User, ArrowLeft, LogOut } from 'lucide-react'
+import { Menu, X, Calendar, Star, Settings, User, ArrowLeft, LogOut, Users, BarChart2 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { signOut } from 'next-auth/react'
@@ -14,6 +14,8 @@ export function AdminMobileNav({ user }: { user: { name?: string | null, email?:
 
   const navItems = [
     { href: "/admin", label: "Agenda del Día", icon: Calendar },
+    { href: "/admin/pacientes", label: "Pacientes", icon: Users },
+    { href: "/admin/stats", label: "Estadísticas Web", icon: BarChart2 },
     { href: "/admin/cms", label: "Casos de Éxito", icon: Star },
     { href: "/admin/settings", label: "Configuración General", icon: Settings },
   ]
