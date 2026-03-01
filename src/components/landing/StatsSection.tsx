@@ -1,45 +1,23 @@
-'use client'
+import { prisma } from '@/lib/prisma'
 
-import { useEffect, useRef, useState } from 'react'
-
-function AnimatedNumber({ target, duration = 1500 }: { target: number; duration?: number }) {
-  const [count, setCount] = useState(0)
-  const ref = useRef<HTMLSpanElement>(null)
-  const started = useRef(false)
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !started.current) {
-          started.current = true
-          const startTime = performance.now()
-          const animate = (currentTime: number) => {
-            const elapsed = currentTime - startTime
-            const progress = Math.min(elapsed / duration, 1)
-            const eased = 1 - Math.pow(1 - progress, 3)
-            setCount(Math.floor(eased * target))
-            if (progress < 1) requestAnimationFrame(animate)
-          }
-          requestAnimationFrame(animate)
-        }
-      },
-      { threshold: 0.3 }
-    )
-    if (ref.current) observer.observe(ref.current)
-    return () => observer.disconnect()
-  }, [target, duration])
-
-  return <span ref={ref}>{count}</span>
+async function getStats() {
+  let stats = await prisma.siteStats.findUnique({ where: { id: 'stats' } })
+  if (!stats) {
+    stats = await prisma.siteStats.create({
+      data: { id: 'stats' }
+    })
+  }
+  return [
+    { icon: stats.stat1Icon, value: stats.stat1Value, suffix: stats.stat1Suffix, label: stats.stat1Label },
+    { icon: stats.stat2Icon, value: stats.stat2Value, suffix: stats.stat2Suffix, label: stats.stat2Label },
+    { icon: stats.stat3Icon, value: stats.stat3Value, suffix: stats.stat3Suffix, label: stats.stat3Label },
+    { icon: stats.stat4Icon, value: stats.stat4Value, suffix: stats.stat4Suffix, label: stats.stat4Label },
+  ]
 }
 
-const stats = [
-  { icon: '🏃', value: 500, suffix: '+', label: 'Clientes recuperados' },
-  { icon: '📅', value: 1000, suffix: '+', label: 'Sesiones realizadas' },
-  { icon: '⭐', value: 98, suffix: '%', label: 'Satisfacción de pacientes' },
-  { icon: '🏆', value: 10, suffix: '+', label: 'Años de experiencia' },
-]
+export async function StatsSection() {
+  const stats = await getStats()
 
-export function StatsSection() {
   return (
     <section className="py-16 px-4">
       <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -50,8 +28,7 @@ export function StatsSection() {
           >
             <span className="text-3xl mb-3">{stat.icon}</span>
             <p className="text-3xl md:text-4xl font-black text-white">
-              <AnimatedNumber target={stat.value} />
-              <span className="text-teal-400">{stat.suffix}</span>
+              {stat.value}<span className="text-teal-400">{stat.suffix}</span>
             </p>
             <p className="text-sm text-gray-400 mt-1 font-medium">{stat.label}</p>
           </div>
