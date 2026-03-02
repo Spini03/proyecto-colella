@@ -175,9 +175,47 @@ export async function getAvailability(dateStr: string) {
   return { slots }
 }
 
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
 import { randomUUID } from 'crypto'
+
+// Upload file to Google Drive via n8n webhook
+async function uploadFileToDrive(file: File, patientName: string, patientPhone: string): Promise<string | null> {
+    try {
+        const n8nDriveWebhook = process.env.N8N_DRIVE_WEBHOOK_URL
+        if (!n8nDriveWebhook) {
+            console.warn('N8N_DRIVE_WEBHOOK_URL not configured, skipping Drive upload')
+            return null
+        }
+
+        const bytes = await file.arrayBuffer()
+        const base64 = Buffer.from(bytes).toString('base64')
+        const fileExtension = file.name.split('.').pop()
+        const fileName = `${Date.now()}-${randomUUID()}.${fileExtension}`
+
+        const response = await fetch(n8nDriveWebhook, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                event: 'medical_file_upload',
+                patientName,
+                patientPhone,
+                fileName,
+                mimeType: file.type,
+                fileBase64: base64,
+            })
+        })
+
+        if (!response.ok) {
+            console.error('Drive upload failed:', await response.text())
+            return null
+        }
+
+        const data = await response.json()
+        return data.fileUrl || null
+    } catch (err) {
+        console.error('Drive upload error:', err)
+        return null
+    }
+}
 
 // Updated signature to accept FormData
 export async function bookAppointment(formData: FormData) {
@@ -221,22 +259,8 @@ export async function bookAppointment(formData: FormData) {
              return { success: false, error: 'El archivo es demasiado grande (Máx 5MB).' }
          }
 
-         // Create Directory
-         const uploadDir = join(process.cwd(), 'public', 'uploads', 'medical')
-         await mkdir(uploadDir, { recursive: true })
-
-         // Save File
-         const fileExtension = medicalFile.name.split('.').pop()
-         const fileName = `${Date.now()}-${randomUUID()}.${fileExtension}`
-         const filePath = join(uploadDir, fileName)
-         
-         const bytes = await medicalFile.arrayBuffer()
-         const buffer = Buffer.from(bytes)
-         
-         await writeFile(filePath, buffer)
-         
-         // Set Relative Path
-         medicalReportUrl = `/uploads/medical/${fileName}`
+         // Upload to Google Drive via n8n
+         medicalReportUrl = await uploadFileToDrive(medicalFile, name, phone)
      }
 
      // Re-calculate Deposit
