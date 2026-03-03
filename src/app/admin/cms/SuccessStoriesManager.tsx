@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { ChangeEvent, useState } from 'react'
 import { upsertSuccessStory, deleteSuccessStory } from '../actions'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
@@ -23,6 +23,37 @@ export function SuccessStoriesManager({ initialStories }: { initialStories: Stor
   const router = useRouter()
   
   const [formData, setFormData] = useState<Partial<Story>>({})
+
+  const handleImageFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const maxSize = 5 * 1024 * 1024
+    if (!file.type.startsWith('image/')) {
+      toast.error('Solo se permiten archivos de imagen')
+      event.target.value = ''
+      return
+    }
+
+    if (file.size > maxSize) {
+      toast.error('La imagen es demasiado grande (máx. 5MB)')
+      event.target.value = ''
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result
+      if (typeof result === 'string') {
+        setFormData(prev => ({ ...prev, imageUrl: result }))
+        toast.success('Imagen cargada correctamente')
+      }
+    }
+    reader.onerror = () => {
+      toast.error('No se pudo leer la imagen seleccionada')
+    }
+    reader.readAsDataURL(file)
+  }
 
   const handleEdit = (story: Story) => {
     setEditingId(story.id)
@@ -123,14 +154,31 @@ export function SuccessStoriesManager({ initialStories }: { initialStories: Stor
                        placeholder="Breve reseña sobre el proceso de rehabilitación y logros..."
                    />
                </div>
-               <div>
-                   <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">URL de la Imagen</label>
-                    <input 
+               <div className="space-y-3">
+                   <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Imagen del Caso</label>
+                   <input
+                       type="file"
+                       accept="image/*"
+                       onChange={handleImageFileChange}
+                       className="w-full text-sm text-gray-500 dark:text-gray-300
+                       file:mr-4 file:py-2 file:px-4
+                       file:rounded-xl file:border-0
+                       file:text-xs file:font-black file:uppercase
+                       file:bg-teal-500/10 file:text-teal-600
+                       hover:file:bg-teal-500/20 cursor-pointer"
+                   />
+                   <p className="text-[11px] text-gray-400">También podés pegar una URL si preferís (opcional).</p>
+                   <input 
                        className="flex h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 focus:bg-transparent outline-none transition-all dark:bg-neutral-800 dark:border-neutral-700 dark:focus:bg-neutral-900"
                        value={formData.imageUrl || ''}
                        onChange={e => setFormData({...formData, imageUrl: e.target.value})}
                        placeholder="https://images.unsplash.com/..."
                    />
+                   {formData.imageUrl && (
+                     <div className="rounded-xl border border-gray-200 dark:border-neutral-700 overflow-hidden bg-gray-50 dark:bg-neutral-800">
+                       <img src={formData.imageUrl} alt="Vista previa" className="w-full h-48 object-cover" />
+                     </div>
+                   )}
                </div>
                <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-neutral-800 rounded-xl cursor-pointer" onClick={() => setFormData({...formData, isActive: !formData.isActive})}>
                    <input 
