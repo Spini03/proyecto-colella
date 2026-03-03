@@ -9,6 +9,7 @@ import { auth } from '@/auth'
 
 // CONSTANTS
 const RESERVATION_TIMEOUT_MINUTES = 15
+const DEFAULT_N8N_DRIVE_WEBHOOK_URL = 'https://n8n.colella.gachetponzellini.com/webhook/medical-file-upload'
 
 // Helper to fetch valid configuration
 async function getSystemConfig(targetDate?: Date) {
@@ -180,11 +181,7 @@ import { randomUUID } from 'crypto'
 // Upload file to Google Drive via n8n webhook
 async function uploadFileToDrive(file: File, patientName: string, patientPhone: string): Promise<string | null> {
     try {
-        const n8nDriveWebhook = process.env.N8N_DRIVE_WEBHOOK_URL
-        if (!n8nDriveWebhook) {
-            console.warn('N8N_DRIVE_WEBHOOK_URL not configured, skipping Drive upload')
-            return null
-        }
+        const n8nDriveWebhook = process.env.N8N_DRIVE_WEBHOOK_URL || DEFAULT_N8N_DRIVE_WEBHOOK_URL
 
         const bytes = await file.arrayBuffer()
         const base64 = Buffer.from(bytes).toString('base64')
@@ -199,18 +196,29 @@ async function uploadFileToDrive(file: File, patientName: string, patientPhone: 
                 patientName,
                 patientPhone,
                 fileName,
+                originalFileName: file.name,
                 mimeType: file.type,
                 fileBase64: base64,
+                fileContentBase64: base64,
             })
         })
 
         if (!response.ok) {
-            console.error('Drive upload failed:', await response.text())
+            const responseText = await response.text()
+            console.error(`Drive upload failed (${response.status}):`, responseText)
             return null
         }
 
-        const data = await response.json()
-        return data.fileUrl || null
+        const rawResponse = await response.text()
+        if (!rawResponse) return null
+
+        try {
+            const data = JSON.parse(rawResponse)
+            return data.fileUrl || data.url || data.webViewLink || null
+        } catch {
+            console.warn('Drive upload webhook did not return JSON. Raw response:', rawResponse)
+            return null
+        }
     } catch (err) {
         console.error('Drive upload error:', err)
         return null
@@ -227,7 +235,7 @@ export async function bookAppointment(formData: FormData) {
 
   // Extract fields from FormData
   const name = formData.get('name') as string
-  const phone = formData.get('phone') as string
+  const phone = (formData.get('phone') as string).replace(/[\s()-]/g, '')
   const date = formData.get('date') as string
   const type = formData.get('type') as string || 'PRESENTIAL'
   const patientNotes = formData.get('patientNotes') as string | null
@@ -327,13 +335,21 @@ export async function bookAppointment(formData: FormData) {
         }
         
         // 3. Update User Profile (ensure we have latest phone/name)
-        await tx.user.update({
-            where: { id: userId },
-            data: {
-                phoneNumber: phone,
-                name: name
+        try {
+            await tx.user.update({
+                where: { id: userId },
+                data: {
+                    phoneNumber: phone,
+                    name: name
+                }
+            });
+        } catch (error: any) {
+            const isPhoneConflict = error?.code === 'P2002' || String(error?.message || '').includes('phoneNumber')
+            if (isPhoneConflict) {
+                throw new Error('PHONE_ALREADY_IN_USE')
             }
-        });
+            throw error
+        }
 
         // 4. Create Appointment
         return await tx.appointment.create({
@@ -369,6 +385,13 @@ export async function bookAppointment(formData: FormData) {
           return { 
               success: false, 
               error: 'Este horario ya ha sido reservado por otra persona o no está disponible. Por favor, selecciona un horario diferente.' 
+          }
+      }
+
+      if (error.message === 'PHONE_ALREADY_IN_USE') {
+          return {
+              success: false,
+              error: 'Ese número de WhatsApp ya está asociado a otro paciente. Usá otro número para continuar.'
           }
       }
 
