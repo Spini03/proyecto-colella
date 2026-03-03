@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
 
   experimental: {
     serverActions: {
+      // Allow medical studies (up to 5MB from the booking form) to reach Server Actions.
+      // Next.js defaults to 1MB, which blocks file uploads before `bookAppointment` runs.
+      bodySizeLimit: '6mb',
       allowedOrigins: [
         'fedecolellafisio.com',         
         'www.fedecolellafisio.com',     
