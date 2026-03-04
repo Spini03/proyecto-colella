@@ -152,6 +152,15 @@ Tasks de esta fase:
 - Gemini como fallback OCR por costo.
 - Google Sheets se mantiene como export aun cuando se agregue PostgreSQL.
 
+
+## Plan de ejecución (operativo)
+
+Para pasar de contexto a implementación concreta, revisar:
+
+- `docs/PLAN_EJECUCION_GPSF_POLICYHUB.md`
+
+Este playbook detalla fases, checklist técnico, DoD, riesgos y proceso end-to-end.
+
 ## Desarrollo local
 
 ```bash
