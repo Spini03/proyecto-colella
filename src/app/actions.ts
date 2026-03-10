@@ -3,13 +3,15 @@
 import { prisma } from '@/lib/prisma'
 // import { BUSINESS_RULES } from '@/lib/config/business-rules' // Deprecated
 import { preference } from '@/lib/mercadopago'
+import { mkdir, writeFile } from 'fs/promises'
+import path from 'path'
+import { randomUUID } from 'crypto'
 
 import { addDays, setHours, setMinutes, startOfDay, endOfDay, isBefore, addMinutes, format, parseISO, getDay, isEqual, subMinutes } from 'date-fns'
 import { auth } from '@/auth'
 
 // CONSTANTS
 const RESERVATION_TIMEOUT_MINUTES = 15
-const DEFAULT_N8N_DRIVE_WEBHOOK_URL = 'https://n8n.colella.gachetponzellini.com/webhook/medical-file-upload'
 
 // Helper to fetch valid configuration
 async function getSystemConfig(targetDate?: Date) {
@@ -176,55 +178,6 @@ export async function getAvailability(dateStr: string) {
   return { slots }
 }
 
-import { randomUUID } from 'crypto'
-
-// Upload file to Google Drive via n8n webhook
-async function uploadFileToDrive(file: File, patientName: string, patientPhone: string): Promise<string | null> {
-    try {
-        const n8nDriveWebhook = process.env.N8N_DRIVE_WEBHOOK_URL || DEFAULT_N8N_DRIVE_WEBHOOK_URL
-
-        const bytes = await file.arrayBuffer()
-        const base64 = Buffer.from(bytes).toString('base64')
-        const fileExtension = file.name.split('.').pop()
-        const fileName = `${Date.now()}-${randomUUID()}.${fileExtension}`
-
-        const response = await fetch(n8nDriveWebhook, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                event: 'medical_file_upload',
-                patientName,
-                patientPhone,
-                fileName,
-                originalFileName: file.name,
-                mimeType: file.type,
-                fileBase64: base64,
-                fileContentBase64: base64,
-            })
-        })
-
-        if (!response.ok) {
-            const responseText = await response.text()
-            console.error(`Drive upload failed (${response.status}):`, responseText)
-            return null
-        }
-
-        const rawResponse = await response.text()
-        if (!rawResponse) return null
-
-        try {
-            const data = JSON.parse(rawResponse)
-            return data.fileUrl || data.url || data.webViewLink || null
-        } catch {
-            console.warn('Drive upload webhook did not return JSON. Raw response:', rawResponse)
-            return null
-        }
-    } catch (err) {
-        console.error('Drive upload error:', err)
-        return null
-    }
-}
-
 // Updated signature to accept FormData
 export async function bookAppointment(formData: FormData) {
   const session = await auth()
@@ -253,6 +206,7 @@ export async function bookAppointment(formData: FormData) {
   try {
      // File Upload Handling
      let medicalReportUrl: string | null = null
+     let medicalFileData: { fileName: string, originalName: string, mimeType: string, size: number, data: Buffer } | null = null
 
      if (medicalFile && medicalFile.size > 0) {
          // Validate File
@@ -267,8 +221,22 @@ export async function bookAppointment(formData: FormData) {
              return { success: false, error: 'El archivo es demasiado grande (Máx 5MB).' }
          }
 
-         // Upload to Google Drive via n8n
-         medicalReportUrl = await uploadFileToDrive(medicalFile, name, phone)
+         const bytes = await medicalFile.arrayBuffer()
+         const buffer = Buffer.from(bytes)
+         const fileName = `${Date.now()}-${randomUUID()}-${medicalFile.name.replace(/\s+/g, '-')}`
+         const relativePath = path.join('uploads', 'medical', fileName)
+         const absolutePath = path.join(process.cwd(), 'public', relativePath)
+
+         await mkdir(path.dirname(absolutePath), { recursive: true })
+         await writeFile(absolutePath, buffer)
+         medicalReportUrl = `/${relativePath.replace(/\\/g, '/')}`
+         medicalFileData = {
+            fileName,
+            originalName: medicalFile.name,
+            mimeType: medicalFile.type,
+            size: medicalFile.size,
+            data: buffer,
+         }
      }
 
      // Re-calculate Deposit
@@ -367,6 +335,17 @@ export async function bookAppointment(formData: FormData) {
             }
         });
      });
+
+     if (medicalFileData) {
+        await prisma.appointmentFile.upsert({
+          where: { appointmentId: appointment.id },
+          update: { ...medicalFileData },
+          create: {
+            appointmentId: appointment.id,
+            ...medicalFileData,
+          }
+        })
+     }
      
      // Create Mercado Pago Preference
      const paymentUrl = await createPreferenceForAppointment(appointment, name, session.user.email, depositAmount)

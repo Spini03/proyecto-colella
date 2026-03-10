@@ -8,6 +8,7 @@ import { SuccessStories } from "@/components/landing/SuccessStories"
 import { BookingWidget } from "@/components/booking/BookingWidget"
 import { WhatsAppFloatingButton } from "@/components/ui/WhatsAppFloatingButton"
 import { AboutSection } from "@/components/landing/AboutSection"
+import { ReviewsSection } from '@/components/landing/ReviewsSection'
 
 export default function Home() {
   return (
@@ -21,6 +22,7 @@ export default function Home() {
       <Suspense fallback={<div className="py-24 text-center">Cargando reserva...</div>}>
         <BookingWidget />
       </Suspense>
+      <ReviewsSection />
       <WhatsAppFloatingButton />
       <footer className="py-8 text-center text-sm text-gray-500 dark:text-gray-400 space-y-3">
         <p>© {new Date().getFullYear()} Lic. Federico Colella. Todos los derechos reservados.</p>
