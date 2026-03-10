@@ -14,6 +14,10 @@ type Appointment = {
   depositPaid: boolean
   patientNotes?: string | null
   medicalReportUrl?: string | null
+  medicalFile?: {
+    originalName: string
+    size: number
+  } | null
   meetLink?: string | null
 }
 
@@ -195,10 +199,11 @@ export function PatientsTable({ patients }: { patients: Patient[] }) {
                       href={app.medicalReportUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      download
                       className="inline-flex items-center gap-1.5 text-xs text-teal-600 dark:text-teal-400 font-bold hover:underline"
                     >
                       <FileText className="h-3.5 w-3.5" />
-                      Ver estudio adjunto
+                      {app.medicalFile?.originalName || 'Ver estudio adjunto'}
                     </a>
                   )}
                   {app.meetLink && (
