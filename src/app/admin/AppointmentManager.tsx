@@ -17,6 +17,10 @@ type Appointment = {
   }
   patientNotes?: string | null
   medicalReportUrl?: string | null
+  medicalFile?: {
+    originalName: string
+    size: number
+  } | null
 }
 
 interface AppointmentManagerProps {
@@ -100,9 +104,10 @@ export function AppointmentManager({ appointments }: AppointmentManagerProps) {
                                                         href={app.medicalReportUrl} 
                                                         target="_blank" 
                                                         rel="noopener noreferrer"
+                                                        download
                                                         className="inline-flex items-center gap-2 text-teal-600 dark:text-teal-400 font-bold hover:underline text-xs"
                                                     >
-                                                        <span>📄 Ver Estudio Adjunto</span>
+                                                        <span>📄 {app.medicalFile?.originalName || 'Ver Estudio Adjunto'}</span>
                                                     </a>
                                                 )}
                                             </div>

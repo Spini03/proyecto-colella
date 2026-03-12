@@ -33,7 +33,7 @@ const ParticleBackground: React.FC = () => {
     // Configuration
     const particleCountMobile = 40;
     const particleCountDesktop = 100;
-    const connectionDistance = 150;
+    const connectionDistance = 240;
     const mouseDistance = 200;
     
     // Colors based on "Fascia Network" aesthetic: Cyan, Electric Blue, White
@@ -62,7 +62,7 @@ const ParticleBackground: React.FC = () => {
           // Extremely slow organic movement ("despacito")
           vx: (Math.random() - 0.5) * 0.2, 
           vy: (Math.random() - 0.5) * 0.2,
-          size: Math.random() * 2 + 1, // Size between 1 and 3
+          size: Math.random() * 3 + 2, // Size between 2 and 5
           color: colors[Math.floor(Math.random() * colors.length)],
         });
       }
@@ -125,7 +125,7 @@ const ParticleBackground: React.FC = () => {
             const opacity = 1 - distance / connectionDistance;
             ctx.beginPath();
             ctx.strokeStyle = `rgba(0, 255, 255, ${opacity * 0.3})`; // Cyan-ish connections
-            ctx.lineWidth = 0.5;
+            ctx.lineWidth = 1.1;
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p2.x, p2.y);
             ctx.stroke();

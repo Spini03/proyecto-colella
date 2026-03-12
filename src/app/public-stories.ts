@@ -8,3 +8,10 @@ export async function getPublicSuccessStories() {
     orderBy: { order: 'asc' }
   })
 }
+
+export async function getPublicReviews() {
+  return await prisma.review.findMany({
+    where: { isActive: true },
+    orderBy: { order: 'asc' }
+  })
+}

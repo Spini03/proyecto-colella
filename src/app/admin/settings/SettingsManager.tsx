@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 type Settings = {
     currentPrice: number
     sessionDuration: number
+    depositPercentage: number
 }
 
 type Schedule = {
@@ -54,7 +55,8 @@ export function SettingsManager({
         setIsSavingSettings(true)
         await updateGlobalSettings({
             currentPrice: Number(settings.currentPrice),
-            sessionDuration: Number(settings.sessionDuration)
+            sessionDuration: Number(settings.sessionDuration),
+            depositPercentage: Number(settings.depositPercentage)
         })
         setIsSavingSettings(false)
         router.refresh()
@@ -217,6 +219,17 @@ export function SettingsManager({
                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-900 dark:border-neutral-700"
                             value={settings.currentPrice}
                             onChange={(e) => setSettings({...settings, currentPrice: Number(e.target.value)})}
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium mb-1">Porcentaje de Seña (%)</label>
+                        <input 
+                            type="number"
+                            min={1}
+                            max={100}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-900 dark:border-neutral-700"
+                            value={settings.depositPercentage}
+                            onChange={(e) => setSettings({...settings, depositPercentage: Number(e.target.value)})}
                         />
                     </div>
                     <div>
