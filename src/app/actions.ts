@@ -186,14 +186,14 @@ export async function bookAppointment(formData: FormData) {
 
   try {
     let medicalFileData:
-      | {
-          fileName: string
-          originalName: string
-          mimeType: string
-          size: number
-          data: Uint8Array
-        }
-      | null = null
+  | {
+      fileName: string
+      originalName: string
+      mimeType: string
+      size: number
+      data: Uint8Array
+    }
+  | null = null
 
     if (medicalFile && medicalFile.size > 0) {
       const validTypes = ['application/pdf', 'image/jpeg', 'image/png']
