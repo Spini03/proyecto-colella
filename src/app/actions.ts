@@ -20,6 +20,9 @@ import { fromZonedTime, toZonedTime } from 'date-fns-tz'
 
 const RESERVATION_TIMEOUT_MINUTES = 15
 const TIMEZONE = 'America/Argentina/Buenos_Aires'
+function toPrismaBytes(input: Uint8Array | Buffer): Uint8Array<ArrayBuffer> {
+  return Uint8Array.from(input) as Uint8Array<ArrayBuffer>
+}
 
 async function getSystemConfig(targetDate?: Date) {
   const config = {
