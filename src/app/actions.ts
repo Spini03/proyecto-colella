@@ -55,7 +55,7 @@ async function getSystemConfig(targetDate?: Date) {
     })
   }
 
-  if (override) {
+  if (override && targetDate) {
     const dayOfWeek = getDay(targetDate)
 
     config.schedule[dayOfWeek] = {
