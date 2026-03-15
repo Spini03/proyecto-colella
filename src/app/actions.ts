@@ -228,7 +228,6 @@ export async function bookAppointment(formData: FormData) {
         size: medicalFile.size,
         data: fileBytes
       }
-    }
 
     const depositAmount = config.price * (config.depositPercentage / 100)
     const bookingDate = new Date(date)
