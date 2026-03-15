@@ -22,7 +22,7 @@ const RESERVATION_TIMEOUT_MINUTES = 15
 const TIMEZONE = 'America/Argentina/Buenos_Aires'
 
 async function getSystemConfig(targetDate?: Date) {
-  let config = {
+  const config = {
     price: 40000,
     duration: 30,
     depositPercentage: 50,
@@ -56,7 +56,7 @@ async function getSystemConfig(targetDate?: Date) {
   }
 
   if (override) {
-    const dayOfWeek = getDay(targetDate!)
+    const dayOfWeek = getDay(targetDate)
 
     config.schedule[dayOfWeek] = {
       startTime: override.startTime,
@@ -188,7 +188,7 @@ export async function bookAppointment(formData: FormData) {
           originalName: string
           mimeType: string
           size: number
-          data: Buffer
+          data: Uint8Array
         }
       | null = null
 
@@ -211,7 +211,7 @@ export async function bookAppointment(formData: FormData) {
       }
 
       const bytes = await medicalFile.arrayBuffer()
-      const buffer = Buffer.from(bytes)
+      const fileBytes = new Uint8Array(bytes)
 
       const fileName = `${Date.now()}-${randomUUID()}-${medicalFile.name.replace(
         /\s+/g,
@@ -223,7 +223,7 @@ export async function bookAppointment(formData: FormData) {
         originalName: medicalFile.name,
         mimeType: medicalFile.type,
         size: medicalFile.size,
-        data: buffer
+        data: fileBytes
       }
     }
 
@@ -318,10 +318,20 @@ export async function bookAppointment(formData: FormData) {
 
       await prisma.appointmentFile.upsert({
         where: { appointmentId: appointment.id },
-        update: { ...medicalFileData },
+        update: {
+          fileName: medicalFileData.fileName,
+          originalName: medicalFileData.originalName,
+          mimeType: medicalFileData.mimeType,
+          size: medicalFileData.size,
+          data: medicalFileData.data
+        },
         create: {
           appointmentId: appointment.id,
-          ...medicalFileData
+          fileName: medicalFileData.fileName,
+          originalName: medicalFileData.originalName,
+          mimeType: medicalFileData.mimeType,
+          size: medicalFileData.size,
+          data: medicalFileData.data
         }
       })
 
