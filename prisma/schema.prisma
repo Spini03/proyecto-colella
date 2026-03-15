@@ -75,23 +75,23 @@ model VerificationToken {
 }
 
 model Appointment {
-  id          String            @id @default(cuid())
-  datetime    DateTime
-  status      AppointmentStatus @default(PENDING)
-  type        AppointmentType   @default(PRESENTIAL)
-  depositPaid Boolean           @default(false)
-  paymentId   String?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  patientNotes     String?
+  id              String            @id @default(cuid())
+  datetime        DateTime
+  status          AppointmentStatus @default(PENDING)
+  type            AppointmentType   @default(PRESENTIAL)
+  depositPaid     Boolean           @default(false)
+  paymentId       String?
+  calendarEventId String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  patientNotes    String?
   medicalReportUrl String?
-  medicalFile      AppointmentFile?
-  meetLink         String?
-  reminder_level   Int      @default(0)
-  patientId   String
-  patient     User     @relation(fields: [patientId], references: [id])
-  @@index([patientId, status])
-  @@index([datetime, status])
+  medicalFile     AppointmentFile?
+  meetLink        String?
+  reminder_level  Int               @default(0)
+
+  patientId String
+  patient   User @relation(fields: [patientId], references: [id])
 }
 
 model AppointmentFile {
