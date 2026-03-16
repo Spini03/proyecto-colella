@@ -326,7 +326,7 @@ export async function bookAppointment(formData: FormData) {
           originalName: medicalFileData.originalName,
           mimeType: medicalFileData.mimeType,
           size: medicalFileData.size,
-          data: medicalFileData.data
+          data: toPrismaBytes(medicalFileData.data)
         },
         create: {
           appointmentId: appointment.id,
@@ -334,7 +334,7 @@ export async function bookAppointment(formData: FormData) {
           originalName: medicalFileData.originalName,
           mimeType: medicalFileData.mimeType,
           size: medicalFileData.size,
-          data: medicalFileData.data
+          data: toPrismaBytes(medicalFileData.data)
         }
       })
 
