@@ -25,7 +25,17 @@ export default function Home() {
       <ReviewsSection />
       <WhatsAppFloatingButton />
       <footer className="py-8 text-center text-sm text-gray-500 dark:text-gray-400 space-y-3">
-        <p>© {new Date().getFullYear()} Lic. Federico Colella. Todos los derechos reservados.</p>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <p>© {new Date().getFullYear()} Lic. Federico Colella. Todos los derechos reservados.</p>
+          <a
+            href="https://gachetponzellini.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center rounded-full border border-teal-500/30 px-3 py-1 text-xs font-semibold text-teal-400 hover:bg-teal-500/10 transition-colors"
+          >
+            Créditos
+          </a>
+        </div>
         <div className="flex justify-center gap-6">
           <Link href="/privacidad" className="hover:text-teal-400 transition-colors">Política de Privacidad</Link>
           <Link href="/terminos" className="hover:text-teal-400 transition-colors">Términos y Condiciones</Link>
