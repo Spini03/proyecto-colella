@@ -28,7 +28,19 @@ export async function getAppointments(startDate?: string, endDate?: string) {
 
   const appointments = await prisma.appointment.findMany({
     where,
-    include: { patient: true },
+    include: {
+      patient: true,
+      medicalFile: {
+        select: {
+          id: true,
+          fileName: true,
+          originalName: true,
+          mimeType: true,
+          size: true,
+          createdAt: true,
+        }
+      }
+    },
     orderBy: { datetime: 'asc' },
   })
   
@@ -37,12 +49,21 @@ export async function getAppointments(startDate?: string, endDate?: string) {
     datetime: app.datetime.toISOString(),
     createdAt: app.createdAt.toISOString(),
     updatedAt: app.updatedAt.toISOString(),
+    medicalFile: app.medicalFile ? {
+      ...app.medicalFile,
+      createdAt: app.medicalFile.createdAt.toISOString(),
+    } : null,
   }))
 }
 
 // --- Stats para el dashboard ---
 export async function getDashboardStats() {
   await requireAdmin()
+
+  const settings = await prisma.globalSettings.findUnique({ where: { id: 'settings' } })
+  const currentPrice = Number(settings?.currentPrice ?? 40000)
+  const depositPercentage = settings?.depositPercentage ?? 50
+  const estimatedDepositAmount = currentPrice * (depositPercentage / 100)
 
   const totalPatients = await prisma.user.count({
     where: { role: 'PATIENT' }
@@ -70,7 +91,70 @@ export async function getDashboardStats() {
     }
   })
 
-  return { totalPatients, totalConfirmed, thisMonthConfirmed, upcomingCount }
+  const thisMonthDepositPayments = await prisma.appointment.count({
+    where: {
+      depositPaid: true,
+      datetime: { gte: firstDayOfMonth, lte: lastDayOfMonth }
+    }
+  })
+
+  const totalDepositPayments = await prisma.appointment.count({
+    where: {
+      depositPaid: true,
+    }
+  })
+
+  const nowDay = now.getDay()
+  const diffToMonday = (nowDay + 6) % 7
+  const startOfWeek = new Date(now)
+  startOfWeek.setDate(now.getDate() - diffToMonday)
+  startOfWeek.setHours(0, 0, 0, 0)
+
+  const endOfWeek = new Date(startOfWeek)
+  endOfWeek.setDate(startOfWeek.getDate() + 7)
+
+  const weekAppointments = await prisma.appointment.findMany({
+    where: {
+      datetime: { gte: startOfWeek, lt: endOfWeek },
+      status: { in: ['CONFIRMED', 'PENDING'] }
+    },
+    select: { patientId: true }
+  })
+
+  const weeklyUniqueClients = new Set(weekAppointments.map(app => app.patientId)).size
+
+  const recurringGrouped = await prisma.appointment.groupBy({
+    by: ['patientId'],
+    where: { status: 'CONFIRMED' },
+    _count: { patientId: true },
+    having: {
+      patientId: {
+        _count: {
+          gt: 1
+        }
+      }
+    }
+  })
+  const recurringClients = recurringGrouped.length
+
+  const newClientsThisMonth = await prisma.user.count({
+    where: {
+      role: 'PATIENT',
+      createdAt: { gte: firstDayOfMonth, lte: lastDayOfMonth }
+    }
+  })
+
+  return {
+    totalPatients,
+    totalConfirmed,
+    thisMonthConfirmed,
+    upcomingCount,
+    estimatedCashCollectedTotal: Math.round(totalDepositPayments * estimatedDepositAmount),
+    estimatedMonthDeposits: Math.round(thisMonthDepositPayments * estimatedDepositAmount),
+    weeklyUniqueClients,
+    recurringClients,
+    newClientsThisMonth,
+  }
 }
 
 // --- Lista de pacientes ---
@@ -90,6 +174,18 @@ export async function getPatients(search?: string) {
     where,
     include: {
       appointments: {
+        include: {
+          medicalFile: {
+            select: {
+              id: true,
+              fileName: true,
+              originalName: true,
+              mimeType: true,
+              size: true,
+              createdAt: true,
+            }
+          },
+        },
         orderBy: { datetime: 'desc' },
       }
     },
@@ -105,6 +201,10 @@ export async function getPatients(search?: string) {
       datetime: a.datetime.toISOString(),
       createdAt: a.createdAt.toISOString(),
       updatedAt: a.updatedAt.toISOString(),
+      medicalFile: a.medicalFile ? {
+        ...a.medicalFile,
+        createdAt: a.medicalFile.createdAt.toISOString(),
+      } : null,
     }))
   }))
 }
@@ -117,6 +217,18 @@ export async function getPatientHistory(patientId: string) {
     where: { id: patientId },
     include: {
       appointments: {
+        include: {
+          medicalFile: {
+            select: {
+              id: true,
+              fileName: true,
+              originalName: true,
+              mimeType: true,
+              size: true,
+              createdAt: true,
+            }
+          },
+        },
         orderBy: { datetime: 'desc' },
       }
     }
@@ -133,6 +245,10 @@ export async function getPatientHistory(patientId: string) {
       datetime: a.datetime.toISOString(),
       createdAt: a.createdAt.toISOString(),
       updatedAt: a.updatedAt.toISOString(),
+      medicalFile: a.medicalFile ? {
+        ...a.medicalFile,
+        createdAt: a.medicalFile.createdAt.toISOString(),
+      } : null,
     }))
   }
 }
@@ -141,6 +257,34 @@ export async function getPatientHistory(patientId: string) {
 export async function getSuccessStories() {
   await requireAdmin()
   return await prisma.successStory.findMany({ orderBy: { order: 'asc' } })
+}
+
+export async function getReviews() {
+  await requireAdmin()
+  return await prisma.review.findMany({ orderBy: { order: 'asc' } })
+}
+
+export async function upsertReview(data: { id?: string, author: string, content: string, rating: number, isActive: boolean }) {
+  await requireAdmin()
+  if (data.id) {
+    await prisma.review.update({
+      where: { id: data.id },
+      data: { author: data.author, content: data.content, rating: data.rating, isActive: data.isActive }
+    })
+  } else {
+    await prisma.review.create({
+      data: { author: data.author, content: data.content, rating: data.rating, isActive: data.isActive }
+    })
+  }
+  revalidatePath('/admin/cms')
+  revalidatePath('/')
+}
+
+export async function deleteReview(id: string) {
+  await requireAdmin()
+  await prisma.review.delete({ where: { id } })
+  revalidatePath('/admin/cms')
+  revalidatePath('/')
 }
 
 export async function upsertSuccessStory(data: { id?: string, name: string, role: string, description?: string | null, imageUrl?: string, isActive: boolean }) {
@@ -178,7 +322,7 @@ export async function getGlobalSettings() {
   return settings
 }
 
-export async function updateGlobalSettings(data: { currentPrice: number, sessionDuration: number }) {
+export async function updateGlobalSettings(data: { currentPrice: number, sessionDuration: number, depositPercentage: number }) {
   const user = await requireAdmin()
   const settings = await getGlobalSettings()
   if (Number(settings.currentPrice) !== data.currentPrice) {
@@ -186,7 +330,7 @@ export async function updateGlobalSettings(data: { currentPrice: number, session
   }
   await prisma.globalSettings.update({
     where: { id: 'settings' },
-    data: { currentPrice: data.currentPrice, sessionDuration: data.sessionDuration }
+    data: { currentPrice: data.currentPrice, sessionDuration: data.sessionDuration, depositPercentage: data.depositPercentage }
   })
   revalidatePath('/admin/settings')
   revalidatePath('/booking')

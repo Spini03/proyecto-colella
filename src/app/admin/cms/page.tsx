@@ -1,8 +1,10 @@
-import { getSuccessStories } from "../actions"
+import { getReviews, getSuccessStories } from "../actions"
+import { ReviewsManager } from "./ReviewsManager"
 import { SuccessStoriesManager } from "./SuccessStoriesManager"
 
 export default async function CMSPage() {
   const stories = await getSuccessStories()
+  const reviews = await getReviews()
 
   return (
     <div className="space-y-6">
@@ -10,6 +12,7 @@ export default async function CMSPage() {
       <p className="text-gray-500">Agrega, edita o elimina testimonios mostrados en la página principal.</p>
       
       <SuccessStoriesManager initialStories={stories} />
+      <ReviewsManager initialReviews={reviews} />
     </div>
   )
 }

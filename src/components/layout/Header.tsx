@@ -203,6 +203,15 @@ export function Header() {
                 >
                   Sobre Mí
                 </motion.button>
+                {session && (
+                  <Link
+                    href="/dashboard/appointments"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-left border-b border-white/10 pb-4 hover:text-teal-400 transition-colors"
+                  >
+                    Mis Turnos
+                  </Link>
+                )}
                 {session ? (
                    <button 
                      onClick={() => {

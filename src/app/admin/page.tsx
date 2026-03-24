@@ -2,7 +2,7 @@
 import { getAppointments, getDashboardStats } from "./actions"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { Calendar, Users, CheckCircle, TrendingUp, Clock } from "lucide-react"
+import { Calendar, Users, CheckCircle, TrendingUp, Clock, Wallet, Repeat, UserPlus } from "lucide-react"
 import { AppointmentManager } from "./AppointmentManager"
 import Link from "next/link"
 
@@ -31,7 +31,7 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Link href="/admin/pacientes" className="bg-white dark:bg-neutral-900 rounded-2xl border border-gray-100 dark:border-neutral-800 p-5 hover:border-teal-500/30 transition-colors">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-teal-50 dark:bg-teal-900/20 rounded-xl">
@@ -74,6 +74,61 @@ export default async function AdminDashboard() {
           </div>
           <p className="text-3xl font-black text-gray-900 dark:text-white">{stats.upcomingCount}</p>
           <p className="text-xs text-gray-400 mt-1">turnos agendados</p>
+        </div>
+
+        <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-gray-100 dark:border-neutral-800 p-5">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl">
+              <Wallet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Cash en señas</span>
+          </div>
+          <p className="text-3xl font-black text-gray-900 dark:text-white">${stats.estimatedCashCollectedTotal.toLocaleString('es-AR')}</p>
+          <p className="text-xs text-gray-400 mt-1">estimado acumulado</p>
+        </div>
+
+        <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-gray-100 dark:border-neutral-800 p-5">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-teal-50 dark:bg-teal-900/20 rounded-xl">
+              <Wallet className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+            </div>
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Cobros del mes</span>
+          </div>
+          <p className="text-3xl font-black text-gray-900 dark:text-white">${stats.estimatedMonthDeposits.toLocaleString('es-AR')}</p>
+          <p className="text-xs text-gray-400 mt-1">estimado por señas</p>
+        </div>
+
+        <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-gray-100 dark:border-neutral-800 p-5">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-violet-50 dark:bg-violet-900/20 rounded-xl">
+              <Users className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+            </div>
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Clientes / semana</span>
+          </div>
+          <p className="text-3xl font-black text-gray-900 dark:text-white">{stats.weeklyUniqueClients}</p>
+          <p className="text-xs text-gray-400 mt-1">únicos esta semana</p>
+        </div>
+
+        <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-gray-100 dark:border-neutral-800 p-5">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-cyan-50 dark:bg-cyan-900/20 rounded-xl">
+              <Repeat className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+            </div>
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Recurrentes</span>
+          </div>
+          <p className="text-3xl font-black text-gray-900 dark:text-white">{stats.recurringClients}</p>
+          <p className="text-xs text-gray-400 mt-1">2+ sesiones confirmadas</p>
+        </div>
+
+        <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-gray-100 dark:border-neutral-800 p-5">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl">
+              <UserPlus className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Clientes nuevos</span>
+          </div>
+          <p className="text-3xl font-black text-gray-900 dark:text-white">{stats.newClientsThisMonth}</p>
+          <p className="text-xs text-gray-400 mt-1">altas del mes</p>
         </div>
       </div>
 
