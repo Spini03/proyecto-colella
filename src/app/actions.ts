@@ -197,7 +197,7 @@ export async function bookAppointment(formData: FormData) {
           originalName: string
           mimeType: string
           size: number
-          data: Buffer
+          data: Uint8Array
         }
       | null = null
 
@@ -220,7 +220,7 @@ export async function bookAppointment(formData: FormData) {
       }
 
       const bytes = await medicalFile.arrayBuffer()
-      const buffer = Buffer.from(bytes)
+      const buffer = new Uint8Array(bytes)
 
       const fileName = `${Date.now()}-${randomUUID()}-${medicalFile.name.replace(
         /\s+/g,
@@ -371,5 +371,41 @@ export async function bookAppointment(formData: FormData) {
     }
 
     return { success: false, error: 'Booking failed. Please try again.' }
+  }
+}
+
+async function createPreferenceForAppointment(appointment: any, payerName: string, payerEmail: string | null | undefined, amount: number) {
+  const appUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || process.env.AUTH_URL || 'http://localhost:3000'
+  const preferenceBody = {
+    items: [{ id: 'deposit', title: `Seña: Sesión de Kinesiología`, quantity: 1, unit_price: amount, currency_id: 'ARS' }],
+    payer: { email: payerEmail || 'unknown@email.com', name: payerName },
+    external_reference: appointment.id,
+    back_urls: { success: `${appUrl}/booking/success`, failure: `${appUrl}/booking/failure`, pending: `${appUrl}/booking/pending` },
+    notification_url: `${appUrl}/api/webhooks/mercadopago`,
+    metadata: { appointment_id: appointment.id },
+    expires: true,
+  }
+  const preferenceResponse = await preference.create({ body: preferenceBody })
+  if (!preferenceResponse.init_point) throw new Error('Failed to create payment preference')
+  return preferenceResponse.init_point
+}
+
+export async function getAppointmentPaymentUrl(appointmentId: string) {
+  const session = await auth()
+  if (!session?.user?.id) return { success: false, error: 'Not authenticated' }
+  const appointment = await prisma.appointment.findUnique({ where: { id: appointmentId }, include: { patient: true } })
+  if (!appointment) return { success: false, error: 'Appointment not found' }
+  if (appointment.patientId !== session.user.id) return { success: false, error: 'Unauthorized' }
+  if (appointment.status !== 'PENDING') return { success: false, error: 'Appointment is not pending' }
+  const now = new Date()
+  const expirationThreshold = subMinutes(now, RESERVATION_TIMEOUT_MINUTES)
+  if (appointment.createdAt < expirationThreshold) return { success: false, error: 'Appointment expired' }
+  const config = await getSystemConfig()
+  const depositAmount = config.price * (config.depositPercentage / 100)
+  try {
+    const url = await createPreferenceForAppointment(appointment, appointment.patient?.name || 'Paciente', appointment.patient?.email, depositAmount)
+    return { success: true, url }
+  } catch (e) {
+    return { success: false, error: 'Failed to generate payment link' }
   }
 }
